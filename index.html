@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiệm Bánh Ngọt - Sweet Bakery</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-birthday-cake"></i>
+                <h1>Sweet Bakery</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#home">Trang chủ</a></li>
+                    <li><a href="#products">Sản phẩm</a></li>
+                    <li><a href="#about">Giới thiệu</a></li>
+                    <li><a href="#contact">Liên hệ</a></li>
+                </ul>
+            </nav>
+            <div class="cart-icon" onclick="toggleCart()">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-count" id="cartCount">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h2>Bánh Ngọt Tươi Mỗi Ngày</h2>
+            <p>Được làm từ những nguyên liệu tự nhiên và tươi ngon nhất</p>
+            <a href="#products" class="btn btn-primary">Xem sản phẩm</a>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="products" id="products">
+        <div class="container">
+            <h2 class="section-title">Sản Phẩm Của Chúng Tôi</h2>
+            <div class="product-grid" id="productGrid">
+                <!-- Products will be loaded here by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Cart Sidebar -->
+    <div class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h3>Giỏ Hàng</h3>
+            <button class="close-cart" onclick="toggleCart()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="cart-items" id="cartItems">
+            <!-- Cart items will be loaded here -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Tổng cộng:</span>
+                <span id="cartTotal">0đ</span>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="openCheckout()">
+                Thanh Toán
+            </button>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div class="modal" id="checkoutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Thông Tin Đặt Hàng</h3>
+                <button class="close-modal" onclick="closeCheckout()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="checkoutForm">
+                    <div class="form-group">
+                        <label for="fullName">Họ và tên người nhận *</label>
+                        <input type="text" id="fullName" name="fullName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Số điện thoại *</label>
+                        <input type="tel" id="phone" name="phone" required pattern="[0-9]{10,11}">
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Địa chỉ giao hàng *</label>
+                        <textarea id="address" name="address" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="note">Ghi chú</label>
+                        <textarea id="note" name="note" rows="2" placeholder="Yêu cầu đặc biệt (nếu có)"></textarea>
+                    </div>
+                    <div class="order-summary">
+                        <h4>Chi tiết đơn hàng</h4>
+                        <div id="orderItems"></div>
+                        
+                        <!-- Voucher Section -->
+                        <div class="voucher-section">
+                            <label for="voucherCode">Mã giảm giá</label>
+                            <div class="voucher-input-group">
+                                <input type="text" id="voucherCode" placeholder="Nhập mã voucher" autocomplete="off">
+                                <button type="button" class="btn-apply-voucher" onclick="applyVoucher()">
+                                    Áp dụng
+                                </button>
+                            </div>
+                            <div id="voucherMessage" class="voucher-message"></div>
+                            <div id="voucherApplied" class="voucher-applied" style="display: none;">
+                                <div class="voucher-info">
+                                    <i class="fas fa-tag"></i>
+                                    <span id="appliedVoucherText"></span>
+                                </div>
+                                <button type="button" class="btn-remove-voucher" onclick="removeVoucher()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="order-subtotal">
+                            <span>Tạm tính:</span>
+                            <span id="orderSubtotal">0đ</span>
+                        </div>
+                        <div id="discountRow" class="order-discount" style="display: none;">
+                            <span>Giảm giá:</span>
+                            <span id="discountAmount">-0đ</span>
+                        </div>
+                        <div class="order-total">
+                            <span>Tổng cộng:</span>
+                            <span id="orderTotal">0đ</span>
+                        </div>
+                        <div class="payment-method">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Thanh toán khi nhận hàng (COD)</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-check"></i> Xác Nhận Đặt Hàng
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal" id="successModal">
+        <div class="modal-content success-content">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3>Đặt Hàng Thành Công!</h3>
+            <p>Cảm ơn quý khách đã đặt hàng. Chúng tôi sẽ liên hệ với bạn sớm nhất.</p>
+            <button class="btn btn-primary" onclick="closeSuccessModal()">Đóng</button>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

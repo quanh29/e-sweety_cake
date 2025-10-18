@@ -1,0 +1,22 @@
+/* Toasts slide in from right to left */
+.react-hot-toast-custom {
+  transform: translateX(50px);
+  opacity: 0;
+  animation: toast-in 0.28s forwards;
+}
+
+@keyframes toast-in {
+  from { transform: translateX(50px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.react-hot-toast-custom.exit {
+  animation: toast-out 0.28s forwards;
+}
+
+@keyframes toast-out {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(50px); opacity: 0; }
+}
+
+/* container styles are handled by react-hot-toast */

@@ -1,0 +1,325 @@
+/* Modal */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modalContent {
+    background: white;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #ff6b9d 0%, #c86dd7 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+}
+
+.modalHeader h3 {
+    font-size: 1.5rem;
+}
+
+.closeModal {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.6rem;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.closeModal:hover {
+    transform: scale(1.1);
+}
+
+.modalBody {
+    padding: 30px;
+}
+
+/* Form */
+.formGroup {
+    margin-bottom: 20px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.formGroup input,
+.formGroup textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    font-family: inherit;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus {
+    outline: none;
+    border-color: #ff6b9d;
+}
+
+.formGroup textarea {
+    resize: vertical;
+}
+
+/* Order Summary */
+.orderSummary {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.orderSummary h4 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.orderItem {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.orderItem:last-child {
+    border-bottom: none;
+}
+
+/* Voucher Section */
+.voucherSection {
+    margin: 20px 0;
+    padding: 15px 0;
+    border-top: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.voucherSection label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.voucherInputGroup {
+    display: flex;
+    gap: 10px;
+}
+
+.voucherInputGroup input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.3s;
+}
+
+.voucherInputGroup input:focus {
+    outline: none;
+    border-color: #ff6b9d;
+}
+
+.voucherInputGroup input:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
+}
+
+.btnApplyVoucher {
+    padding: 10px 20px;
+    background: #ff6b9d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.btnApplyVoucher:hover:not(:disabled) {
+    background: #ff5a8c;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(255, 107, 157, 0.3);
+}
+
+.btnApplyVoucher:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.voucherMessage {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    min-height: 20px;
+}
+
+.voucherMessage.success {
+    color: #4ecca3;
+    font-weight: 600;
+}
+
+.voucherMessage.error {
+    color: #ff4757;
+    font-weight: 600;
+}
+
+.voucherApplied {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding: 12px 15px;
+    background: #e8f5e9;
+    border: 2px solid #4ecca3;
+    border-radius: 8px;
+}
+
+.voucherInfo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #2d7a5e;
+    font-weight: 600;
+}
+
+.voucherInfo i {
+    font-size: 1.2rem;
+}
+
+.btnRemoveVoucher {
+    background: none;
+    border: none;
+    color: #ff4757;
+    cursor: pointer;
+    font-size: 1.2rem;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+.btnRemoveVoucher:hover {
+    background: rgba(255, 71, 87, 0.1);
+    transform: scale(1.1);
+}
+
+.orderSubtotal,
+.orderDiscount {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    font-size: 1.1rem;
+    color: #666;
+}
+
+.orderDiscount {
+    color: #4ecca3;
+    font-weight: 600;
+}
+
+.orderDiscount span:last-child {
+    color: #4ecca3;
+}
+
+.orderTotal {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid #e0e0e0;
+}
+
+.orderTotal span:last-child {
+    color: #ff6b9d;
+}
+
+.paymentMethod {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    border: 2px solid #4ecca3;
+    color: #4ecca3;
+    font-weight: 600;
+}
+
+.paymentMethod i {
+    font-size: 1.5rem;
+}
+
+.btnSubmit {
+    width: 100%;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    background: linear-gradient(135deg, #ff6b9d 0%, #c86dd7 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btnSubmit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(200, 109, 215, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .modalContent {
+        width: 95%;
+    }
+
+    .modalBody {
+        padding: 20px;
+    }
+}

@@ -1,0 +1,5 @@
+{
+    "full_name":"Trần Xuân Hưng",
+    "username":"esweetybakeHung",
+    "password": "hung12345678"
+}
