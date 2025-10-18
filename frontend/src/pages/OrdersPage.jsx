@@ -7,7 +7,7 @@ import styles from './AdminCommon.module.css';
 import modalStyles from '../components/Modal.module.css';
 
 const OrdersPage = () => {
-  const { orders, products, vouchers, addOrder, updateOrder, deleteOrder } = useAdmin();
+  const { orders, products, vouchers, addOrder, updateOrder, deleteOrder, updateOrderStatus } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -85,8 +85,8 @@ const OrdersPage = () => {
     const item = newItems[index];
     
     if (field === 'productId') {
-      const product = products.find(p => p.id === parseInt(value));
-      item.productId = parseInt(value);
+      const product = products.find(p => p.id === value);
+      item.productId = value;
       item.price = product ? product.price : 0;
     } else if (field === 'quantity') {
       item.quantity = parseInt(value) >= 1 ? parseInt(value) : 1;
@@ -163,16 +163,16 @@ const OrdersPage = () => {
   };
 
   const handleConfirm = (id) => {
-    updateOrder(id, { status: 'confirmed' });
+    updateOrderStatus(id, 'confirmed');
   };
 
   const handleComplete = (id) => {
-    updateOrder(id, { status: 'completed' });
+    updateOrderStatus(id, 'completed');
   };
 
   const handleCancel = (id) => {
     if (confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
-      updateOrder(id, { status: 'cancelled' });
+      updateOrderStatus(id, 'cancelled');
     }
   };
 

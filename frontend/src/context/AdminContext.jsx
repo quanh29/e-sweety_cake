@@ -25,16 +25,15 @@ export function AdminProvider({ children }) {
 
   // Fetch initial data from backend
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchAllData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/products`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch products');
-        }
-        const data = await response.json();
-        // Map backend fields to frontend fields
-        const formattedProducts = data.map(p => ({
+        
+        // Fetch Products
+        const productResponse = await fetchWithAuth(`${API_URL}/products`);
+        if (!productResponse.ok) throw new Error('Failed to fetch products');
+        const productData = await productResponse.json();
+        const formattedProducts = productData.map(p => ({
           id: p.prod_id,
           name: p.prod_name,
           description: p.prod_description,
@@ -43,33 +42,109 @@ export function AdminProvider({ children }) {
           image: p.picture_url ? `${SERVER_URL}${p.picture_url}` : 'https://via.placeholder.com/150'
         }));
         setProducts(formattedProducts);
+
+        // Fetch Orders
+        const orderResponse = await fetchWithAuth(`${API_URL}/orders`);
+        if (!orderResponse.ok) throw new Error('Failed to fetch orders');
+        const orderData = await orderResponse.json();
+        const formattedOrders = orderData.map(o => ({
+          id: o.order_id,
+          customerName: o.customer_name,
+          customerPhone: o.phone_number,
+          customerAddress: o.address,
+          customerNote: o.note,
+          shippingFee: parseFloat(o.shipping_fee),
+          voucherCode: o.voucher_code,
+          status: o.status,
+          items: o.items.map(item => ({
+            productId: item.prod_id,
+            quantity: item.quantity,
+            price: parseFloat(item.price)
+          })),
+          subtotal: parseFloat(o.subtotal),
+          total: parseFloat(o.total),
+          createdAt: new Date(o.created_at)
+        }));
+        setOrders(formattedOrders);
+
+        // Add other data fetching here (vouchers, users etc.)
+
         setError(null);
       } catch (err) {
         setError(err.message);
-        console.error("Fetch products error:", err);
+        console.error("Fetch data error:", err);
+        toast.error(`Lỗi tải dữ liệu: ${err.message}`);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
-    // You can add other data fetching here for orders, users etc.
+    fetchAllData();
   }, []);
 
 
   // Order functions
-  const addOrder = (order) => {
-    const newOrder = { ...order, id: Date.now() };
-    setOrders(prev => [...prev, newOrder]);
-    return newOrder;
+  const addOrder = async (orderData) => {
+    try {
+      const response = await fetchWithAuth(`${API_URL}/orders`, {
+        method: 'POST',
+        body: JSON.stringify(orderData),
+      });
+      if (!response.ok) throw new Error('Failed to create order');
+      const newOrder = await response.json();
+      // ... format newOrder from backend and add to state ...
+      setOrders(prev => [newOrder, ...prev]);
+      toast.success('Thêm đơn hàng thành công!');
+      return newOrder;
+    } catch (err) {
+      console.error("Add order error:", err);
+      toast.error(`Lỗi: ${err.message}`);
+    }
   };
 
-  const updateOrder = (id, data) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, ...data } : o));
+  const updateOrder = async (id, data) => {
+    try {
+      const response = await fetchWithAuth(`${API_URL}/orders/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to update order');
+      // Refetch or update state locally
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, ...data, status: o.status } : o)); // Keep original status on full update
+      toast.success('Cập nhật đơn hàng thành công!');
+    } catch (err) {
+      console.error("Update order error:", err);
+      toast.error(`Lỗi: ${err.message}`);
+    }
   };
 
-  const deleteOrder = (id) => {
-    setOrders(prev => prev.filter(o => o.id !== id));
+  const updateOrderStatus = async (id, status) => {
+    try {
+      const response = await fetchWithAuth(`${API_URL}/orders/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) throw new Error('Failed to update order status');
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+      toast.success('Cập nhật trạng thái đơn hàng thành công!');
+    } catch (err) {
+      console.error("Update order status error:", err);
+      toast.error(`Lỗi: ${err.message}`);
+    }
+  };
+
+  const deleteOrder = async (id) => {
+    try {
+      const response = await fetchWithAuth(`${API_URL}/orders/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete order');
+      setOrders(prev => prev.filter(o => o.id !== id));
+      toast.success('Xóa đơn hàng thành công!');
+    } catch (err) {
+      console.error("Delete order error:", err);
+      toast.error(`Lỗi: ${err.message}`);
+    }
   };
 
   // Product functions
@@ -232,6 +307,7 @@ export function AdminProvider({ children }) {
     error,
     addOrder,
     updateOrder,
+    updateOrderStatus,
     deleteOrder,
     addProduct,
     updateProduct,

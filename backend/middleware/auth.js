@@ -38,10 +38,16 @@ export function authorizeRoles(...allowedRoles) {
 
             const userIsAdmin = rows[0].is_admin === 1;
 
+            // An 'user' has rights, admin also has all user rights.
+            if (allowedRoles.includes('user') || userIsAdmin) {
+                return next();
+            }
+
             // An 'admin' has specific rights.
             if (allowedRoles.includes('admin') && userIsAdmin) {
                 return next();
             }
+            
 
             return res.status(403).json({ message: `Forbidden: Requires one of roles [${allowedRoles.join(', ')}]` });
 

@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { authenticateJWT, authorizeRoles } from './middleware/auth.js';
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
 import rateLimiter from './middleware/ratelimiter.js';
 
 const app = express();
@@ -32,6 +33,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Protected route examples
 app.get('/api/profile', authenticateJWT, (req, res) => {
