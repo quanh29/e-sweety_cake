@@ -19,7 +19,7 @@ const AdminLayout = () => {
         </div>
         <div className={styles.sidebarMenu}>
           <NavLink
-            to="/admin/dashboard/orders"
+            to="/admin/manage/orders"
             className={({ isActive }) =>
               `${styles.menuItem} ${isActive ? styles.active : ''}`
             }
@@ -28,7 +28,7 @@ const AdminLayout = () => {
             <span>Đơn hàng</span>
           </NavLink>
           <NavLink
-            to="/admin/dashboard/products"
+            to="/admin/manage/products"
             className={({ isActive }) =>
               `${styles.menuItem} ${isActive ? styles.active : ''}`
             }
@@ -37,7 +37,7 @@ const AdminLayout = () => {
             <span>Sản phẩm</span>
           </NavLink>
           <NavLink
-            to="/admin/dashboard/imports"
+            to="/admin/manage/imports"
             className={({ isActive }) =>
               `${styles.menuItem} ${isActive ? styles.active : ''}`
             }
@@ -46,7 +46,7 @@ const AdminLayout = () => {
             <span>Nhập hàng</span>
           </NavLink>
           <NavLink
-            to="/admin/dashboard/vouchers"
+            to="/admin/manage/vouchers"
             className={({ isActive }) =>
               `${styles.menuItem} ${isActive ? styles.active : ''}`
             }
@@ -55,7 +55,7 @@ const AdminLayout = () => {
             <span>Voucher</span>
           </NavLink>
           <NavLink
-            to="/admin/dashboard/users"
+            to="/admin/manage/users"
             className={({ isActive }) =>
               `${styles.menuItem} ${isActive ? styles.active : ''}`
             }

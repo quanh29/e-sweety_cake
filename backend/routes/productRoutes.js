@@ -23,8 +23,8 @@ router.get('/', productController.getProducts);
 router.get('/:id', productController.getProduct);
 
 // Admin routes
-router.post('/', upload.single('image'), productController.createProduct);
-router.put('/:id', upload.single('image'), productController.updateProduct);
-router.delete('/:id', productController.deleteProduct);
+router.post('/', authenticateJWT, authorizeRoles('admin'), upload.single('image'), productController.createProduct);
+router.put('/:id', authenticateJWT, authorizeRoles('admin'), upload.single('image'), productController.updateProduct);
+router.delete('/:id', authenticateJWT, authorizeRoles('admin'), productController.deleteProduct);
 
 export default router;

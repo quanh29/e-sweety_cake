@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 
 const AdminContext = createContext();
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
@@ -105,9 +106,11 @@ export function AdminProvider({ children }) {
         image: newProduct.imageUrl ? `${SERVER_URL}${newProduct.imageUrl}` : 'https://via.placeholder.com/150'
       };
       setProducts(prev => [...prev, formattedProduct]);
+      toast.success('Thêm sản phẩm thành công!');
     } catch (err) {
       setError(err.message);
       console.error("Add product error:", err);
+      toast.error('Thêm sản phẩm thất bại!');
     }
   };
 
@@ -145,9 +148,11 @@ export function AdminProvider({ children }) {
         image: updatedProduct.picture_url ? `${SERVER_URL}${updatedProduct.picture_url}` : 'https://via.placeholder.com/150'
       };
       setProducts(prev => prev.map(p => p.id === id ? formattedProduct : p));
+      toast.success('Cập nhật sản phẩm thành công!');
     } catch (err) {
       setError(err.message);
       console.error(`Update product ${id} error:`, err);
+      toast.error('Cập nhật sản phẩm thất bại!');
     }
   };
 
@@ -166,9 +171,11 @@ export function AdminProvider({ children }) {
       }
 
       setProducts(prev => prev.filter(p => p.id !== id));
+      toast.success('Xóa sản phẩm thành công!');
     } catch (err) {
       setError(err.message);
       console.error(`Delete product ${id} error:`, err);
+      toast.error('Xóa sản phẩm thất bại!');
     }
   };
 

@@ -46,7 +46,7 @@ const AdminLogin = () => {
           sessionStorage.setItem('isAdmin', 'true');
         }
         toast.success('Đăng nhập thành công');
-        navigate('/admin/dashboard');
+        navigate('/admin/manage');
       })
   .catch((err) => {
         // Show specific message for invalid credentials, otherwise show generic

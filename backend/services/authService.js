@@ -9,7 +9,7 @@ export const generateAccessToken = (user) => {
     const payload = {
         id: user.user_id || user.id,
         username: user.username,
-        roles: Array.isArray(user.roles) ? user.roles : (user.is_admin ? ['admin', 'user'] : ['user'])
+        roles: Array.isArray(user.roles) ? user.roles : (user.is_admin ? ['admin'] : ['user'])
     };
     return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
 };

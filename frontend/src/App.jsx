@@ -13,7 +13,24 @@ import UsersPage from './pages/UsersPage';
 import CartSidebar from './components/CartSidebar';
 import CheckoutModal from './components/CheckoutModal';
 import SuccessModal from './components/SuccessModal';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
+
+const PrivateRoute = ({ children }) => {
+  const isAuthenticated = !!sessionStorage.getItem('accessToken');
+
+  if (isAuthenticated) {
+    return children;
+  }
+
+  // Show a forbidden message and redirect
+  toast.error('Truy cập bị từ chối. Vui lòng đăng nhập.');
+  return <Navigate to="/admin" replace />;
+};
+
+const AdminLoginRoute = () => {
+  const isAuthenticated = !!sessionStorage.getItem('accessToken');
+  return isAuthenticated ? <Navigate to="/admin/manage" replace /> : <AdminLogin />;
+};
 
 function App() {
   const [cartOpen, setCartOpen] = useState(false);
@@ -49,17 +66,27 @@ function App() {
     <CartProvider>
       <AdminProvider>
         <BrowserRouter>
+          <Toaster position="top-center" reverseOrder={false} />
           <Routes>
             <Route path="/" element={<Landing onCartClick={handleCartClick} />} />
-            <Route path="/admin" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminLayout />}>
-              <Route index element={<Navigate to="/admin/dashboard/orders" replace />} />
-              <Route path="orders" element={<OrdersPage />} />
-              <Route path="products" element={<ProductsPage />} />
-              <Route path="imports" element={<ImportsPage />} />
-              <Route path="vouchers" element={<VouchersPage />} />
-              <Route path="users" element={<UsersPage />} />
-            </Route>
+            <Route path="/admin" element={<AdminLoginRoute />} />
+            <Route 
+              path="/admin/manage/*" 
+              element={
+                <PrivateRoute>
+                  <Routes>
+                    <Route path="/" element={<AdminLayout />}>
+                      <Route index element={<Navigate to="orders" replace />} />
+                      <Route path="orders" element={<OrdersPage />} />
+                      <Route path="products" element={<ProductsPage />} />
+                      <Route path="imports" element={<ImportsPage />} />
+                      <Route path="vouchers" element={<VouchersPage />} />
+                      <Route path="users" element={<UsersPage />} />
+                    </Route>
+                  </Routes>
+                </PrivateRoute>
+              } 
+            />
           </Routes>
 
           <CartSidebar 
@@ -76,7 +103,6 @@ function App() {
             isOpen={successOpen}
             onClose={handleSuccessClose}
           />
-          <Toaster position="top-center" />
         </BrowserRouter>
       </AdminProvider>
     </CartProvider>
