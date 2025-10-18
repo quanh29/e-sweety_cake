@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import { fetchWithAuth } from '../utils/api';
 
 const AdminContext = createContext();
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
@@ -74,7 +75,6 @@ export function AdminProvider({ children }) {
   // Product functions
   const addProduct = async (productData) => {
     try {
-      const token = sessionStorage.getItem('accessToken');
       const formData = new FormData();
       formData.append('name', productData.name);
       formData.append('description', productData.description);
@@ -84,11 +84,8 @@ export function AdminProvider({ children }) {
         formData.append('image', productData.imageFile);
       }
 
-      const response = await fetch(`${API_URL}/products`, {
+      const response = await fetchWithAuth(`${API_URL}/products`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
         body: formData,
       });
 
@@ -116,7 +113,6 @@ export function AdminProvider({ children }) {
 
   const updateProduct = async (id, productData) => {
     try {
-      const token = sessionStorage.getItem('accessToken');
       const formData = new FormData();
       formData.append('name', productData.name);
       formData.append('description', productData.description);
@@ -126,11 +122,8 @@ export function AdminProvider({ children }) {
         formData.append('image', productData.imageFile);
       }
 
-      const response = await fetch(`${API_URL}/products/${id}`, {
+      const response = await fetchWithAuth(`${API_URL}/products/${id}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
         body: formData,
       });
 
@@ -158,12 +151,8 @@ export function AdminProvider({ children }) {
 
   const deleteProduct = async (id) => {
     try {
-      const token = sessionStorage.getItem('accessToken');
-      const response = await fetch(`${API_URL}/products/${id}`, {
+      const response = await fetchWithAuth(`${API_URL}/products/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
       });
 
       if (!response.ok) {

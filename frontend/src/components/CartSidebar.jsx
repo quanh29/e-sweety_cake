@@ -27,7 +27,7 @@ const CartSidebar = ({ isOpen, onClose, onCheckout }) => {
                     ) : (
                         cart.map(item => (
                             <div key={item.id} className={styles.cartItem}>
-                                <div className={styles.cartItemImage}>{item.image}</div>
+                                <img src={item.image} alt={item.name} className={styles.cartItemImage} />
                                 <div className={styles.cartItemInfo}>
                                     <div className={styles.cartItemName}>{item.name}</div>
                                     <div className={styles.cartItemPrice}>{formatPrice(item.price)}</div>
