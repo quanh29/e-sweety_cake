@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const AdminContext = createContext();
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+const API_URL = `${SERVER_URL}/api`;
 
 export function useAdmin() {
   const context = useContext(AdminContext);
@@ -11,81 +13,47 @@ export function useAdmin() {
 }
 
 export function AdminProvider({ children }) {
-  // Sample initial data
   const [orders, setOrders] = useState([]);
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: 'Bánh Tiramisu',
-      description: 'Bánh Tiramisu Ý truyền thống',
-      image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=200',
-      stock: 15,
-      price: 250000
-    },
-    {
-      id: 2,
-      name: 'Bánh Cheesecake',
-      description: 'Cheesecake vị dâu tây',
-      image: 'https://images.unsplash.com/photo-1533134486753-c833f0ed4866?w=200',
-      stock: 20,
-      price: 200000
-    },
-    {
-      id: 3,
-      name: 'Bánh Chocolate',
-      description: 'Bánh chocolate đắng',
-      image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=200',
-      stock: 10,
-      price: 180000
-    }
-  ]);
+  const [products, setProducts] = useState([]);
   const [imports, setImports] = useState([]);
-  const [vouchers, setVouchers] = useState([
-    {
-      id: 1,
-      code: 'GIAM10',
-      type: 'percentage',
-      value: 10,
-      quantity: 100,
-      used: 5,
-      startDate: new Date('2024-01-01'),
-      endDate: new Date('2024-12-31'),
-      description: 'Giảm 10% cho tất cả đơn hàng'
-    },
-    {
-      id: 2,
-      code: 'FREESHIP',
-      type: 'fixed',
-      value: 30000,
-      quantity: 50,
-      used: 10,
-      startDate: new Date('2024-01-01'),
-      endDate: new Date('2024-12-31'),
-      description: 'Miễn phí ship cho đơn hàng trên 200k'
-    }
-  ]);
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      fullname: 'Admin System',
-      username: 'admin',
-      role: 'admin',
-      status: 'active',
-      createdAt: new Date('2024-01-01'),
-      lastLogin: new Date(),
-      note: 'Tài khoản quản trị viên hệ thống'
-    },
-    {
-      id: 2,
-      fullname: 'Nguyễn Văn A',
-      username: 'manager1',
-      role: 'manager',
-      status: 'active',
-      createdAt: new Date('2024-02-01'),
-      lastLogin: new Date(),
-      note: 'Quản lý cửa hàng'
-    }
-  ]);
+  const [vouchers, setVouchers] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch initial data from backend
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_URL}/products`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        const data = await response.json();
+        // Map backend fields to frontend fields
+        const formattedProducts = data.map(p => ({
+          id: p.prod_id,
+          name: p.prod_name,
+          description: p.prod_description,
+          price: parseFloat(p.price),
+          stock: parseInt(p.stock, 10),
+          image: p.picture_url ? `${SERVER_URL}${p.picture_url}` : 'https://via.placeholder.com/150'
+        }));
+        setProducts(formattedProducts);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+        console.error("Fetch products error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+    // You can add other data fetching here for orders, users etc.
+  }, []);
+
 
   // Order functions
   const addOrder = (order) => {
@@ -103,19 +71,107 @@ export function AdminProvider({ children }) {
   };
 
   // Product functions
-  const addProduct = (product) => {
-    const newProduct = { ...product, id: Date.now() };
-    setProducts(prev => [...prev, newProduct]);
-    return newProduct;
+  const addProduct = async (productData) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const formData = new FormData();
+      formData.append('name', productData.name);
+      formData.append('description', productData.description);
+      formData.append('price', productData.price);
+      formData.append('stock', productData.stock);
+      if (productData.imageFile) {
+        formData.append('image', productData.imageFile);
+      }
+
+      const response = await fetch(`${API_URL}/products`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add product');
+      }
+
+      const newProduct = await response.json();
+      const formattedProduct = {
+        id: newProduct.prod_id,
+        name: newProduct.name,
+        description: newProduct.description,
+        price: parseFloat(newProduct.price),
+        stock: parseInt(newProduct.stock, 10),
+        image: newProduct.imageUrl ? `${SERVER_URL}${newProduct.imageUrl}` : 'https://via.placeholder.com/150'
+      };
+      setProducts(prev => [...prev, formattedProduct]);
+    } catch (err) {
+      setError(err.message);
+      console.error("Add product error:", err);
+    }
   };
 
-  const updateProduct = (id, data) => {
-    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...data } : p));
+  const updateProduct = async (id, productData) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const formData = new FormData();
+      formData.append('name', productData.name);
+      formData.append('description', productData.description);
+      formData.append('price', productData.price);
+      formData.append('stock', productData.stock);
+      if (productData.imageFile) {
+        formData.append('image', productData.imageFile);
+      }
+
+      const response = await fetch(`${API_URL}/products/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update product');
+      }
+
+      const updatedProduct = await response.json();
+      const formattedProduct = {
+        id: updatedProduct.prod_id,
+        name: updatedProduct.prod_name,
+        description: updatedProduct.prod_description,
+        price: parseFloat(updatedProduct.price),
+        stock: parseInt(updatedProduct.stock, 10),
+        image: updatedProduct.picture_url ? `${SERVER_URL}${updatedProduct.picture_url}` : 'https://via.placeholder.com/150'
+      };
+      setProducts(prev => prev.map(p => p.id === id ? formattedProduct : p));
+    } catch (err) {
+      setError(err.message);
+      console.error(`Update product ${id} error:`, err);
+    }
   };
 
-  const deleteProduct = (id) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+  const deleteProduct = async (id) => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      const response = await fetch(`${API_URL}/products/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete product');
+      }
+
+      setProducts(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      setError(err.message);
+      console.error(`Delete product ${id} error:`, err);
+    }
   };
+
 
   // Import functions
   const addImport = (importData) => {
@@ -176,6 +232,8 @@ export function AdminProvider({ children }) {
     imports,
     vouchers,
     users,
+    loading,
+    error,
     addOrder,
     updateOrder,
     deleteOrder,
@@ -193,5 +251,9 @@ export function AdminProvider({ children }) {
     deleteUser
   };
 
-  return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
+  return (
+    <AdminContext.Provider value={value}>
+      {children}
+    </AdminContext.Provider>
+  );
 }

@@ -4,12 +4,14 @@ import 'dotenv/config';
 import cookieParser from 'cookie-parser';
 import { authenticateJWT, authorizeRoles } from './middleware/auth.js';
 import authRoutes from './routes/authRoutes.js';
+import productRoutes from './routes/productRoutes.js';
 import rateLimiter from './middleware/ratelimiter.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 //Middleware
+app.use('/uploads', express.static('uploads'));
 app.use(express.json());
 
 app.use(cors({
@@ -29,6 +31,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 
 // Protected route examples
 app.get('/api/profile', authenticateJWT, (req, res) => {
