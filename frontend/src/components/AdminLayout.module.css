@@ -1,0 +1,99 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+  background: #f3f4f6;
+}
+
+.sidebar {
+  width: 260px;
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.sidebarHeader {
+  padding: 30px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebarHeader h1 {
+  font-size: 24px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebarHeader p {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.sidebarMenu {
+  padding: 20px 0;
+}
+
+.menuItem {
+  padding: 15px 25px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  border-left: 4px solid transparent;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+}
+
+.menuItem:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-left-color: white;
+}
+
+.menuItem.active {
+  background: rgba(255, 255, 255, 0.15);
+  border-left-color: white;
+  color: white;
+  font-weight: 600;
+}
+
+.menuIcon {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+}
+
+.mainContent {
+  margin-left: 260px;
+  flex: 1;
+  padding: 30px;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 70px;
+  }
+
+  .sidebarHeader h1 {
+    font-size: 18px;
+  }
+
+  .sidebarHeader p,
+  .menuItem span {
+    display: none;
+  }
+
+  .menuItem {
+    padding: 15px;
+    justify-content: center;
+  }
+
+  .mainContent {
+    margin-left: 70px;
+  }
+}
