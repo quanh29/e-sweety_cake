@@ -82,7 +82,24 @@ export const createOrder = async (req, res) => {
 
         await connection.commit();
 
-        const [newOrder] = await getOrders({ params: { id: orderId } }, res);
+        // Fetch the newly created order with all details
+        const [orders] = await connection.query(`
+            SELECT 
+                o.order_id, o.customer_name, o.phone_number, o.address, o.shipping_fee, o.voucher_code, o.note, o.created_at, o.status_id,
+                (SELECT SUM(od.price * od.quantity) FROM order_details od WHERE od.order_id = o.order_id) as subtotal
+            FROM orders o
+            WHERE o.order_id = ?
+        `, [orderId]);
+
+        const [details] = await connection.query('SELECT prod_id, quantity, price FROM order_details WHERE order_id = ?', [orderId]);
+        
+        const newOrder = {
+            ...orders[0],
+            status: idToStatus[orders[0].status_id] || 'pending',
+            items: details,
+            total: parseFloat(orders[0].subtotal || 0) + parseFloat(orders[0].shipping_fee || 0)
+        };
+
         res.status(201).json(newOrder);
 
     } catch (error) {

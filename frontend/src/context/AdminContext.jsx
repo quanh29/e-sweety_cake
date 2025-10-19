@@ -98,11 +98,31 @@ export function AdminProvider({ children }) {
         body: JSON.stringify(orderData),
       });
       if (!response.ok) throw new Error('Failed to create order');
-      const newOrder = await response.json();
-      // ... format newOrder from backend and add to state ...
-      setOrders(prev => [newOrder, ...prev]);
+      const newOrderFromBackend = await response.json();
+      
+      // Format the new order to match the frontend structure
+      const formattedNewOrder = {
+        id: newOrderFromBackend.order_id,
+        customerName: newOrderFromBackend.customer_name,
+        customerPhone: newOrderFromBackend.phone_number,
+        customerAddress: newOrderFromBackend.address,
+        customerNote: newOrderFromBackend.note,
+        shippingFee: parseFloat(newOrderFromBackend.shipping_fee),
+        voucherCode: newOrderFromBackend.voucher_code,
+        status: newOrderFromBackend.status,
+        items: newOrderFromBackend.items.map(item => ({
+          productId: item.prod_id,
+          quantity: item.quantity,
+          price: parseFloat(item.price)
+        })),
+        subtotal: parseFloat(newOrderFromBackend.subtotal),
+        total: parseFloat(newOrderFromBackend.total),
+        createdAt: new Date(newOrderFromBackend.created_at)
+      };
+      
+      setOrders(prev => [formattedNewOrder, ...prev]);
       toast.success('Thêm đơn hàng thành công!');
-      return newOrder;
+      return formattedNewOrder;
     } catch (err) {
       console.error("Add order error:", err);
       toast.error(`Lỗi: ${err.message}`);

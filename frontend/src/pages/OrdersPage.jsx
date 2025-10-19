@@ -12,6 +12,8 @@ const OrdersPage = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
+  const [openDropdownIndex, setOpenDropdownIndex] = useState(null);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
 
   // State for the order form
   const [orderItems, setOrderItems] = useState([]);
@@ -49,6 +51,23 @@ const OrdersPage = () => {
     setOrderTotals({ subtotal, discount, total: total > 0 ? total : 0 });
   }, [orderItems, appliedVoucherCode, shippingFee, vouchers]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdownIndex !== null) {
+        setOpenDropdownIndex(null);
+      }
+    };
+    
+    if (openDropdownIndex !== null) {
+      document.addEventListener('click', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [openDropdownIndex]);
+
   const handleOpenModal = (order = null) => {
     setEditingOrder(order);
     if (order) {
@@ -78,6 +97,8 @@ const OrdersPage = () => {
   const handleCloseModal = () => {
     setEditingOrder(null);
     setIsModalOpen(false);
+    setOpenDropdownIndex(null);
+    setProductSearchTerm('');
   };
 
   const handleItemChange = (index, field, value) => {
@@ -88,6 +109,8 @@ const OrdersPage = () => {
       const product = products.find(p => p.id === value);
       item.productId = value;
       item.price = product ? product.price : 0;
+      setOpenDropdownIndex(null); // Close dropdown after selection
+      setProductSearchTerm(''); // Clear search term
     } else if (field === 'quantity') {
       item.quantity = parseInt(value) >= 1 ? parseInt(value) : 1;
     }
@@ -332,19 +355,151 @@ const OrdersPage = () => {
 
           {orderItems.map((item, index) => {
             const product = products.find(p => p.id === item.productId);
+            // Get list of already selected product IDs (excluding current item)
+            const selectedProductIds = orderItems
+              .map((orderItem, idx) => idx !== index ? orderItem.productId : null)
+              .filter(id => id !== null && id !== '');
+            
+            // Filter out already selected products
+            const availableProducts = products.filter(p => !selectedProductIds.includes(p.id));
+            
+            // Further filter by search term
+            const filteredProducts = availableProducts.filter(p => 
+              p.name.toLowerCase().includes(productSearchTerm.toLowerCase())
+            );
+            
             return (
               <div key={index} style={{ marginBottom: '10px', display: 'grid', gridTemplateColumns: '2fr 100px 120px 120px 60px', gap: '10px', alignItems: 'center' }}>
-                <select
-                  value={item.productId}
-                  onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
-                  required
-                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db' }}
-                >
-                  <option value="">-- Chọn sản phẩm --</option>
-                  {products.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                {/* Custom Dropdown with Images */}
+                <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenDropdownIndex(openDropdownIndex === index ? null : index);
+                      if (openDropdownIndex !== index) {
+                        setProductSearchTerm(''); // Reset search when opening
+                      }
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #d1d5db',
+                      cursor: 'pointer',
+                      background: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      minHeight: '42px'
+                    }}
+                  >
+                    {product ? (
+                      <>
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          style={{
+                            width: '30px',
+                            height: '30px',
+                            borderRadius: '4px',
+                            objectFit: 'cover',
+                            border: '1px solid #e5e7eb'
+                          }}
+                        />
+                        <span style={{ flex: 1 }}>{product.name}</span>
+                      </>
+                    ) : (
+                      <span style={{ color: '#9ca3af' }}>-- Chọn sản phẩm --</span>
+                    )}
+                    <span style={{ marginLeft: 'auto', color: '#6b7280' }}>▼</span>
+                  </div>
+                  
+                  {openDropdownIndex === index && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        marginTop: '4px',
+                        background: 'white',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        maxHeight: '300px',
+                        overflowY: 'auto',
+                        zIndex: 1000
+                      }}
+                    >
+                      {/* Search Input */}
+                      <div style={{ padding: '8px', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
+                        <input
+                          type="text"
+                          placeholder="🔍 Tìm kiếm sản phẩm..."
+                          value={productSearchTerm}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setProductSearchTerm(e.target.value);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          autoFocus
+                          style={{
+                            width: '100%',
+                            padding: '6px 10px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                            outline: 'none'
+                          }}
+                        />
+                      </div>
+
+                      {/* Removed the selectable placeholder option to prevent selecting an empty product */}
+                      
+                      {filteredProducts.length === 0 ? (
+                        <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>
+                          Không tìm thấy sản phẩm
+                        </div>
+                      ) : (
+                        filteredProducts.map((p) => (
+                          <div
+                            key={p.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleItemChange(index, 'productId', p.id);
+                            }}
+                            style={{
+                              padding: '8px 12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              borderBottom: '1px solid #f3f4f6'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                          >
+                            <img
+                              src={p.image}
+                              alt={p.name}
+                              style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '4px',
+                                objectFit: 'cover',
+                                border: '1px solid #e5e7eb'
+                              }}
+                            />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: '500' }}>{p.name}</div>
+                              <div style={{ fontSize: '0.85em', color: '#6b7280' }}>{formatCurrency(p.price)}</div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
                 <input
                   type="number"
                   value={item.quantity}
