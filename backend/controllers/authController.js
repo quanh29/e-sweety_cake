@@ -29,19 +29,45 @@ export const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
+        console.log('[login] User authenticated:', user.username);
+
+        // Clear any existing refresh token cookie before setting a new one
+        const oldToken = req.cookies.refreshToken;
+        if (oldToken) {
+            console.log('[login] Found old refresh token, revoking it');
+            try {
+                await revokeRefreshToken(oldToken);
+            } catch (err) {
+                console.log('[login] Failed to revoke old token:', err.message);
+            }
+        }
+
+        res.cookie('refreshToken', '', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            expires: new Date(0),
+        });
+
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);
+
+        console.log('[login] Generated new refresh token for user:', user.username);
 
         // store hashed refresh token in DB with expiry
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
         await storeRefreshToken({ user_id: user.user_id || user.user_id, token: refreshToken, expiresAt, deviceInfo: req.headers['user-agent'] });
 
-        res.cookie('refreshToken', refreshToken, {
+        const cookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            path: '/'
+        };
+
+        res.cookie('refreshToken', refreshToken, cookieOptions);
+        console.log('[login] Set new refresh token cookie with options:', cookieOptions);
 
         res.json({ accessToken });
     } catch (err) {
@@ -53,35 +79,66 @@ export const login = async (req, res) => {
 export const refresh = async (req, res) => {
     try {
         const oldRefreshToken = req.cookies.refreshToken;
-        if (!oldRefreshToken) return res.status(401).json({ message: 'Refresh token not found' });
+        console.log('[refresh] Incoming request from', req.ip || req.hostname, 'user-agent:', req.headers['user-agent']);
+        if (!oldRefreshToken) {
+            console.log('[refresh] No refresh token cookie present');
+            return res.status(401).json({ message: 'Refresh token not found' });
+        }
+
+        // Do not log full token in production; log masked version for debugging
+        const mask = t => (typeof t === 'string' && t.length > 10) ? `${t.slice(0,6)}...${t.slice(-4)}` : t;
+        console.log('[refresh] Received refresh token cookie (masked):', mask(oldRefreshToken));
 
         const stored = await findRefreshToken(oldRefreshToken);
-        if (!stored) return res.status(403).json({ message: 'Invalid or revoked refresh token' });
+        console.log('[refresh] DB lookup for refresh token returned:', stored ? { token_id: stored.token_id, user_id: stored.user_id, expiresAt: stored.expiresAt } : null);
+        if (!stored) {
+            console.log('[refresh] No stored token found or token revoked');
+            return res.status(403).json({ message: 'Invalid or revoked refresh token' });
+        }
 
         const payload = verifyRefreshToken(oldRefreshToken);
-        if (!payload) return res.status(403).json({ message: 'Invalid or expired refresh token' });
+        console.log('[refresh] Token verified payload:', payload);
+        if (!payload) {
+            console.log('[refresh] Token verification failed or expired');
+            return res.status(403).json({ message: 'Invalid or expired refresh token' });
+        }
 
         const user = await findUserByUsername(payload.username);
-        if (!user) return res.status(403).json({ message: 'User not found' });
+        console.log('[refresh] Resolved user from payload username:', payload.username, '->', user ? { user_id: user.user_id, username: user.username } : null);
+        if (!user) {
+            console.log('[refresh] User not found for payload username');
+            return res.status(403).json({ message: 'User not found' });
+        }
 
-        // One-time use: revoke the old refresh token
-        await revokeRefreshToken(oldRefreshToken);
+    // One-time use: revoke the old refresh token
+    console.log('[refresh] Revoking old refresh token id:', stored.token_id);
+    await revokeRefreshToken(oldRefreshToken);
+    console.log('[refresh] Revoke call completed for token id:', stored.token_id);
 
         // Issue a new refresh token, store it hashed in DB
         const newRefreshToken = generateRefreshToken(user);
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-        await storeRefreshToken({ user_id: user.user_id || user.user_id, token: newRefreshToken, expiresAt, deviceInfo: req.headers['user-agent'] });
+    const storeResult = await storeRefreshToken({ user_id: user.user_id || user.user_id, token: newRefreshToken, expiresAt, deviceInfo: req.headers['user-agent'] });
+    console.log('[refresh] Stored new refresh token result:', storeResult);
 
         // Generate new access token
         const newAccessToken = generateAccessToken(user);
 
         // Set new refresh token cookie (httpOnly)
-        res.cookie('refreshToken', newRefreshToken, {
+        const cookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            //'none' phù hợp với môi trường production
+            //'lax' phù hợp với môi trường development
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            path: '/'
+        };
+        
+        res.cookie('refreshToken', newRefreshToken, cookieOptions);
+
+        console.log('[refresh] Set refreshToken cookie (masked):', mask(newRefreshToken));
+        console.log('[refresh] Cookie options:', cookieOptions);
 
         res.json({ accessToken: newAccessToken });
     } catch (err) {
@@ -92,14 +149,35 @@ export const refresh = async (req, res) => {
 
 export const logout = async (req, res) => {
     try {
-        const refreshToken = req.cookies.refreshToken;
+        const { refreshToken } = req.cookies;
+        console.log('[logout] Logout request received');
         if (refreshToken) {
+            console.log('[logout] Revoking refresh token');
             await revokeRefreshToken(refreshToken);
+        } else {
+            console.log('[logout] No refresh token found in cookies');
         }
-    res.clearCookie('refreshToken', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'none' });
-        res.status(200).json({ message: 'Logout successful' });
+
+        res.cookie('refreshToken', '', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            expires: new Date(0),
+            path: '/'
+        });
+
+        console.log('[logout] Cleared refresh token cookie');
+        return res.status(200).json({ message: 'Logged out successfully' });
     } catch (err) {
-        console.error('Logout error', err);
-        res.status(500).json({ message: 'Internal server error' });
+        console.error('Logout error:', err);
+        // Still try to clear cookie even if DB operation fails
+        res.cookie('refreshToken', '', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            expires: new Date(0),
+            path: '/'
+        });
+        return res.status(200).json({ message: 'Logged out, but failed to revoke token on server.' });
     }
 };

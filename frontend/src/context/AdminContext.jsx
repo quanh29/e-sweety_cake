@@ -26,6 +26,13 @@ export function AdminProvider({ children }) {
   // Fetch initial data from backend
   useEffect(() => {
     const fetchAllData = async () => {
+      // Only fetch if user is logged in (has access token)
+      const accessToken = sessionStorage.getItem('accessToken');
+      if (!accessToken) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         
@@ -297,6 +304,81 @@ export function AdminProvider({ children }) {
     setUsers(prev => prev.filter(u => u.id !== id));
   };
 
+  const logout = async () => {
+    try {
+      // Call the backend to invalidate the refresh token
+      await fetchWithAuth(`${API_URL}/auth/logout`, { method: 'POST' });
+    } catch (error) {
+      console.error('Logout request failed:', error);
+      // Continue with client-side cleanup even if the server call fails
+    } finally {
+      // Clear all local session and state data
+      sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('isAdmin');
+      setOrders([]);
+      setProducts([]);
+      setImports([]);
+      setVouchers([]);
+      setUsers([]);
+      setError(null);
+    }
+  };
+
+  const refetchData = async () => {
+    const accessToken = sessionStorage.getItem('accessToken');
+    if (!accessToken) return;
+
+    try {
+      setLoading(true);
+      
+      // Fetch Products
+      const productResponse = await fetchWithAuth(`${API_URL}/products`);
+      if (!productResponse.ok) throw new Error('Failed to fetch products');
+      const productData = await productResponse.json();
+      const formattedProducts = productData.map(p => ({
+        id: p.prod_id,
+        name: p.prod_name,
+        description: p.prod_description,
+        price: parseFloat(p.price),
+        stock: parseInt(p.stock, 10),
+        image: p.picture_url ? `${SERVER_URL}${p.picture_url}` : 'https://via.placeholder.com/150'
+      }));
+      setProducts(formattedProducts);
+
+      // Fetch Orders
+      const orderResponse = await fetchWithAuth(`${API_URL}/orders`);
+      if (!orderResponse.ok) throw new Error('Failed to fetch orders');
+      const orderData = await orderResponse.json();
+      const formattedOrders = orderData.map(o => ({
+        id: o.order_id,
+        customerName: o.customer_name,
+        customerPhone: o.phone_number,
+        customerAddress: o.address,
+        customerNote: o.note,
+        shippingFee: parseFloat(o.shipping_fee),
+        voucherCode: o.voucher_code,
+        status: o.status,
+        items: o.items.map(item => ({
+          productId: item.prod_id,
+          quantity: item.quantity,
+          price: parseFloat(item.price)
+        })),
+        subtotal: parseFloat(o.subtotal),
+        total: parseFloat(o.total),
+        createdAt: new Date(o.created_at)
+      }));
+      setOrders(formattedOrders);
+
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error("Refetch data error:", err);
+      toast.error(`Lỗi tải dữ liệu: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     orders,
     products,
@@ -320,7 +402,9 @@ export function AdminProvider({ children }) {
     deleteVoucher,
     addUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    logout,
+    refetchData
   };
 
   return (

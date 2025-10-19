@@ -11,7 +11,7 @@ export const generateAccessToken = (user) => {
         username: user.username,
         roles: Array.isArray(user.roles) ? user.roles : (user.is_admin ? ['admin'] : ['user'])
     };
-    return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+    return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: '1m' });
 };
 
 export const generateRefreshToken = (user) => {

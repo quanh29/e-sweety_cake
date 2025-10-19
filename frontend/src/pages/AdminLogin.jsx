@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import styles from './AdminLogin.module.css';
 import { toast } from 'react-hot-toast';
+import { useAdmin } from '../context/AdminContext';
 
 const AdminLogin = () => {
   const [username, setUsername] = useState('');
@@ -23,51 +24,60 @@ const AdminLogin = () => {
   const [countdown, setCountdown] = useState(0);
   const navigate = useNavigate();
   const abortRef = useRef(null);
+  const { logout, refetchData } = useAdmin();
 
-  const handleSubmit = (e) => {
-  e.preventDefault();
-  // if locked, ignore submits
-  if (lockUntil && Date.now() < lockUntil) return;
-  setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    // if locked, ignore submits
+    if (lockUntil && Date.now() < lockUntil) return;
+    setLoading(true);
 
-    const serverUrl = import.meta.env.VITE_SERVER_URL || '';
-    axios.post(
-      `${serverUrl}/api/auth/login`,
-      { username, password },
-      { withCredentials: true }
-    )
-      .then((res) => {
-        // Expecting { accessToken, isAdmin } and backend sets HttpOnly refresh token cookie
-        const { accessToken, isAdmin } = res.data || {};
-        if (accessToken) {
-          sessionStorage.setItem('accessToken', accessToken);
-        }
-        if (isAdmin) {
-          sessionStorage.setItem('isAdmin', 'true');
-        }
-        toast.success('Đăng nhập thành công');
-        navigate('/admin/manage');
-      })
-  .catch((err) => {
-        // Show specific message for invalid credentials, otherwise show generic
-        const status = err?.response?.status;
-        const serverMsg = err?.response?.data?.message;
-        if (status === 401 || serverMsg === 'Invalid credentials') {
-          const msg = 'Tài khoản hoặc mật khẩu không đúng';
-          toast.error(msg);
-        } else if (status === 429) {
-          // lock for 10 minutes
-          const lockMs = 0.1 * 60 * 1000;
-          const until = Date.now() + lockMs;
-          localStorage.setItem('loginLockUntil', String(until));
-          setLockUntil(until);
-          toast.error('Bạn nhập sai thông tin quá nhiều. Vui lòng thử lại sau 10 phút.');
-        } else {
-          const msg = serverMsg || err.message || 'Đã xảy ra lỗi';
-          toast.error(msg);
-        }
-      })
-      .finally(() => setLoading(false));
+    try {
+      // First, logout any existing session to clear old refresh tokens
+      await logout();
+
+      const serverUrl = import.meta.env.VITE_SERVER_URL || '';
+      const response = await axios.post(
+        `${serverUrl}/api/auth/login`,
+        { username, password },
+        { withCredentials: true }
+      );
+
+      // Expecting { accessToken, isAdmin } and backend sets HttpOnly refresh token cookie
+      const { accessToken, isAdmin } = response.data || {};
+      if (accessToken) {
+        sessionStorage.setItem('accessToken', accessToken);
+      }
+      if (isAdmin) {
+        sessionStorage.setItem('isAdmin', 'true');
+      }
+      toast.success('Đăng nhập thành công');
+      
+      // Refetch data for the new user
+      await refetchData();
+      
+      navigate('/admin/manage');
+    } catch (err) {
+      // Show specific message for invalid credentials, otherwise show generic
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.message;
+      if (status === 401 || serverMsg === 'Invalid credentials') {
+        const msg = 'Tài khoản hoặc mật khẩu không đúng';
+        toast.error(msg);
+      } else if (status === 429) {
+        // lock for 10 minutes
+        const lockMs = 0.1 * 60 * 1000;
+        const until = Date.now() + lockMs;
+        localStorage.setItem('loginLockUntil', String(until));
+        setLockUntil(until);
+        toast.error('Bạn nhập sai thông tin quá nhiều. Vui lòng thử lại sau 10 phút.');
+      } else {
+        const msg = serverMsg || err.message || 'Đã xảy ra lỗi';
+        toast.error(msg);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   // countdown timer for lock state

@@ -18,9 +18,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Public routes
-router.get('/', productController.getProducts);
-router.get('/:id', productController.getProduct);
+// user routes
+router.get('/', authenticateJWT, authorizeRoles('user'), productController.getProducts);
+router.get('/:id', authenticateJWT, authorizeRoles('user'), productController.getProduct);
 
 // Admin routes
 router.post('/', authenticateJWT, authorizeRoles('admin'), upload.single('image'), productController.createProduct);

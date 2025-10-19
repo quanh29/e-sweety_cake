@@ -40,6 +40,7 @@ export const storeRefreshToken = async ({ user_id, token, expiresAt, deviceInfo 
 
 export const findRefreshToken = async (token) => {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    
     const [rows] = await pool.execute('SELECT * FROM refresh_tokens WHERE token_hash = ? AND revoked = false', [tokenHash]);
     return rows[0];
 };
