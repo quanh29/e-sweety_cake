@@ -24,8 +24,10 @@ const OrderModal = ({ isOpen, onClose, editingOrder, products = [], vouchers = [
         note: editingOrder.customerNote || ''
       });
       setOrderItems(editingOrder.items || [{ productId: '', quantity: 1, price: 0 }]);
-      setVoucherCode(editingOrder.voucherCode || '');
-      setAppliedVoucherCode(editingOrder.voucherCode || '');
+      // Treat explicit 'NONE' voucher as no voucher (empty)
+      const vcode = editingOrder.voucherCode && String(editingOrder.voucherCode).toLowerCase() === 'none' ? '' : (editingOrder.voucherCode || '');
+      setVoucherCode(vcode);
+      setAppliedVoucherCode(vcode);
       setShippingFee(editingOrder.shippingFee || 0);
       setOrderStatus(editingOrder.status || 'pending');
     } else {
@@ -69,11 +71,16 @@ const OrderModal = ({ isOpen, onClose, editingOrder, products = [], vouchers = [
   };
 
   const handleApplyVoucher = () => {
-    const voucher = vouchers.find(v => v.code.toLowerCase() === voucherCode.toLowerCase());
     if (!voucherCode.trim()) {
       setAppliedVoucherCode('');
       return;
     }
+    if (String(voucherCode).toLowerCase() === 'none') {
+      // Treat NONE as empty
+      setAppliedVoucherCode('');
+      return;
+    }
+    const voucher = vouchers.find(v => v.code.toLowerCase() === voucherCode.toLowerCase());
     if (voucher) {
       setAppliedVoucherCode(voucherCode);
       alert(`Đã áp dụng mã giảm giá: ${voucher.code}`);
@@ -97,7 +104,7 @@ const OrderModal = ({ isOpen, onClose, editingOrder, products = [], vouchers = [
       customerNote: customerInfo.note,
       status: orderStatus,
       items: finalItems,
-      voucherCode: appliedVoucherCode,
+      voucherCode: appliedVoucherCode && String(appliedVoucherCode).toLowerCase() === 'none' ? '' : appliedVoucherCode,
       shippingFee,
       ...orderTotals,
       createdAt: editingOrder?.createdAt || new Date()
