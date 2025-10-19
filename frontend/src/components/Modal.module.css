@@ -22,6 +22,7 @@
 }
 
 .modalContent {
+  position: relative;
   background: white;
   max-width: 1000px;
   width: 90%;
@@ -47,6 +48,26 @@
 .modalContent h2 {
   margin-bottom: 20px;
   color: #667eea;
+}
+
+.closeButton {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 6px;
+  border-radius: 6px;
+  z-index: 20;
+}
+
+.closeButton:hover {
+  background: #f3f4f6;
+  color: #111827;
 }
 
 .formGroup {

@@ -1,0 +1,85 @@
+.container {
+  display: block;
+}
+
+.formGroup {
+  margin-bottom: 15px;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.divider {
+  margin: 20px 0;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+}
+
+.sectionTitle {
+  margin-bottom: 15px;
+}
+
+.itemsHeader {
+  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: 2fr 100px 120px 120px 60px;
+  gap: 10px;
+  font-weight: bold;
+  font-size: 0.9em;
+  color: #6b7280;
+}
+
+.itemRow {
+  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: 2fr 100px 120px 120px 60px;
+  gap: 10px;
+  align-items: center;
+}
+
+.qtyInput {
+  padding: 8px;
+  text-align: center;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+
+.voucherApplied {
+  color: #10b981;
+  margin-top: 5px;
+  display: block;
+}
+
+.totalsCard {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.totalsRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.formActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}

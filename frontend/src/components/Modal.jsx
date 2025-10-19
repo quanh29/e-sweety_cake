@@ -20,16 +20,12 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 
   if (!isOpen) return null;
 
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
+  // Do not close modal on backdrop click. Provide explicit close button instead.
   return (
-    <div className={styles.modal} onClick={handleBackdropClick}>
-      <div className={styles.modalContent}>
-        <h2>{title}</h2>
+    <div className={styles.modal}>
+      <div className={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close dialog">×</button>
+        <h2 id="modal-title">{title}</h2>
         {children}
       </div>
     </div>

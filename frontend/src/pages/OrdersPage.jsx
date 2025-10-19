@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAdmin } from '../context/AdminContext';
 import { formatCurrency, formatDate } from '../utils/format';
-import Modal from '../components/Modal';
 import Button from '../components/Button';
 import styles from './AdminCommon.module.css';
-import modalStyles from '../components/Modal.module.css';
+import OrderModal from '../components/OrderModal';
 
 const OrdersPage = () => {
   const { orders, products, vouchers, addOrder, updateOrder, deleteOrder, updateOrderStatus } = useAdmin();
@@ -12,6 +11,7 @@ const OrdersPage = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
+  const [isViewOnly, setIsViewOnly] = useState(false);
   const [openDropdownIndex, setOpenDropdownIndex] = useState(null);
   const [productSearchTerm, setProductSearchTerm] = useState('');
 
@@ -68,8 +68,10 @@ const OrdersPage = () => {
     };
   }, [openDropdownIndex]);
 
-  const handleOpenModal = (order = null) => {
+  // viewOnly: when true the modal will be opened read-only (no edits allowed)
+  const handleOpenModal = (order = null, viewOnly = false) => {
     setEditingOrder(order);
+    setIsViewOnly(!!viewOnly);
     if (order) {
       setCustomerInfo({ 
         name: order.customerName, 
@@ -275,7 +277,10 @@ const OrdersPage = () => {
                           Hoàn thành
                         </Button>
                       )}
-                      <Button size="sm" variant="warning" onClick={() => handleOpenModal(order)}>
+                      <Button size="sm" variant="info" onClick={() => handleOpenModal(order, true)}>
+                        Xem
+                      </Button>
+                      <Button size="sm" variant="warning" onClick={() => handleOpenModal(order, false)}>
                         Sửa
                       </Button>
                       {order.status === 'pending' && (
@@ -295,313 +300,16 @@ const OrdersPage = () => {
         </table>
       </div>
 
-      <Modal
+      <OrderModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={editingOrder ? 'Sửa đơn hàng' : 'Thêm đơn hàng mới'}
-      >
-        <form onSubmit={handleSubmit}>
-          <div className={modalStyles.formGroup}>
-            <label>Tên khách hàng</label>
-            <input
-              type="text"
-              name="customerName"
-              value={customerInfo.name}
-              onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-              required
-            />
-          </div>
-          <div className={modalStyles.formGroup}>
-            <label>Số điện thoại</label>
-            <input
-              type="tel"
-              name="customerPhone"
-              value={customerInfo.phone}
-              onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
-              required
-            />
-          </div>
-          <div className={modalStyles.formGroup}>
-            <label>Địa chỉ giao hàng</label>
-            <textarea
-              name="customerAddress"
-              value={customerInfo.address}
-              onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-              required
-            />
-          </div>
-          <div className={modalStyles.formGroup}>
-            <label>Ghi chú (tùy chọn)</label>
-            <textarea
-              name="customerNote"
-              placeholder="Ghi chú thêm về đơn hàng..."
-              value={customerInfo.note}
-              onChange={(e) => setCustomerInfo({...customerInfo, note: e.target.value})}
-              rows="3"
-            />
-          </div>
-
-          <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
-
-          <h4 style={{ marginBottom: '15px' }}>Chi tiết đơn hàng</h4>
-          
-          <div style={{ marginBottom: '10px', display: 'grid', gridTemplateColumns: '2fr 100px 120px 120px 60px', gap: '10px', fontWeight: 'bold', fontSize: '0.9em', color: '#6b7280' }}>
-            <div>Sản phẩm</div>
-            <div style={{ textAlign: 'center' }}>Số lượng</div>
-            <div style={{ textAlign: 'right' }}>Đơn giá</div>
-            <div style={{ textAlign: 'right' }}>Thành tiền</div>
-            <div></div>
-          </div>
-
-          {orderItems.map((item, index) => {
-            const product = products.find(p => p.id === item.productId);
-            // Get list of already selected product IDs (excluding current item)
-            const selectedProductIds = orderItems
-              .map((orderItem, idx) => idx !== index ? orderItem.productId : null)
-              .filter(id => id !== null && id !== '');
-            
-            // Filter out already selected products
-            const availableProducts = products.filter(p => !selectedProductIds.includes(p.id));
-            
-            // Further filter by search term
-            const filteredProducts = availableProducts.filter(p => 
-              p.name.toLowerCase().includes(productSearchTerm.toLowerCase())
-            );
-            
-            return (
-              <div key={index} style={{ marginBottom: '10px', display: 'grid', gridTemplateColumns: '2fr 100px 120px 120px 60px', gap: '10px', alignItems: 'center' }}>
-                {/* Custom Dropdown with Images */}
-                <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenDropdownIndex(openDropdownIndex === index ? null : index);
-                      if (openDropdownIndex !== index) {
-                        setProductSearchTerm(''); // Reset search when opening
-                      }
-                    }}
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid #d1d5db',
-                      cursor: 'pointer',
-                      background: 'white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      minHeight: '42px'
-                    }}
-                  >
-                    {product ? (
-                      <>
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          style={{
-                            width: '30px',
-                            height: '30px',
-                            borderRadius: '4px',
-                            objectFit: 'cover',
-                            border: '1px solid #e5e7eb'
-                          }}
-                        />
-                        <span style={{ flex: 1 }}>{product.name}</span>
-                      </>
-                    ) : (
-                      <span style={{ color: '#9ca3af' }}>-- Chọn sản phẩm --</span>
-                    )}
-                    <span style={{ marginLeft: 'auto', color: '#6b7280' }}>▼</span>
-                  </div>
-                  
-                  {openDropdownIndex === index && (
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        marginTop: '4px',
-                        background: 'white',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        maxHeight: '300px',
-                        overflowY: 'auto',
-                        zIndex: 1000
-                      }}
-                    >
-                      {/* Search Input */}
-                      <div style={{ padding: '8px', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
-                        <input
-                          type="text"
-                          placeholder="🔍 Tìm kiếm sản phẩm..."
-                          value={productSearchTerm}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            setProductSearchTerm(e.target.value);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          autoFocus
-                          style={{
-                            width: '100%',
-                            padding: '6px 10px',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '4px',
-                            fontSize: '14px',
-                            outline: 'none'
-                          }}
-                        />
-                      </div>
-
-                      {/* Removed the selectable placeholder option to prevent selecting an empty product */}
-                      
-                      {filteredProducts.length === 0 ? (
-                        <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>
-                          Không tìm thấy sản phẩm
-                        </div>
-                      ) : (
-                        filteredProducts.map((p) => (
-                          <div
-                            key={p.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleItemChange(index, 'productId', p.id);
-                            }}
-                            style={{
-                              padding: '8px 12px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px',
-                              borderBottom: '1px solid #f3f4f6'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                          >
-                            <img
-                              src={p.image}
-                              alt={p.name}
-                              style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '4px',
-                                objectFit: 'cover',
-                                border: '1px solid #e5e7eb'
-                              }}
-                            />
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: '500' }}>{p.name}</div>
-                              <div style={{ fontSize: '0.85em', color: '#6b7280' }}>{formatCurrency(p.price)}</div>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-                <input
-                  type="number"
-                  value={item.quantity}
-                  onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                  min="1"
-                  style={{ padding: '8px', textAlign: 'center', borderRadius: '6px', border: '1px solid #d1d5db' }}
-                />
-                <div style={{ textAlign: 'right', padding: '8px' }}>{formatCurrency(item.price)}</div>
-                <div style={{ textAlign: 'right', padding: '8px', fontWeight: 'bold' }}>{formatCurrency(item.quantity * item.price)}</div>
-                <Button
-                  type="button"
-                  variant="danger"
-                  size="sm"
-                  onClick={() => handleRemoveItem(index)}
-                  disabled={orderItems.length === 1}
-                >
-                  Xóa
-                </Button>
-              </div>
-            );
-          })}
-          
-          <Button type="button" variant="success" size="sm" onClick={handleAddItem} style={{ marginTop: '10px' }}>
-            + Thêm sản phẩm
-          </Button>
-
-          <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
-
-          <div className={modalStyles.formGroup}>
-            <label>Phí giao hàng</label>
-            <input
-              type="text"
-              placeholder="Nhập phí giao hàng (đ)"
-              value={shippingFee || ''}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, '');
-                setShippingFee(value ? parseInt(value) : 0);
-              }}
-            />
-          </div>
-
-          <div className={modalStyles.formGroup}>
-            <label>Mã giảm giá (tùy chọn)</label>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <input
-                type="text"
-                placeholder="Nhập mã voucher"
-                value={voucherCode}
-                onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-                style={{ textTransform: 'uppercase', flex: 1 }}
-              />
-              <Button type="button" variant="primary" onClick={handleApplyVoucher}>
-                Áp dụng
-              </Button>
-            </div>
-            {appliedVoucherCode && (
-              <small style={{ color: '#10b981', marginTop: '5px', display: 'block' }}>
-                ✓ Đã áp dụng mã: {appliedVoucherCode}
-              </small>
-            )}
-          </div>
-
-          <div style={{ marginTop: '20px', padding: '15px', background: '#f9fafb', borderRadius: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span>Tạm tính:</span>
-              <strong>{formatCurrency(orderTotals.subtotal)}</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span>Phí giao hàng:</span>
-              <strong>{formatCurrency(shippingFee)}</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#ef4444' }}>
-              <span>Giảm giá:</span>
-              <strong>- {formatCurrency(orderTotals.discount)}</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2em', paddingTop: '8px', borderTop: '2px solid #e5e7eb' }}>
-              <span>Tổng cộng:</span>
-              <strong style={{ color: '#10b981' }}>{formatCurrency(orderTotals.total)}</strong>
-            </div>
-          </div>
-
-          {editingOrder && (
-            <div className={modalStyles.formGroup} style={{ marginTop: '20px' }}>
-              <label>Trạng thái</label>
-              <select value={orderStatus} onChange={(e) => setOrderStatus(e.target.value)}>
-                <option value="pending">Chờ xác nhận</option>
-                <option value="confirmed">Đã xác nhận</option>
-                <option value="completed">Hoàn thành</option>
-                <option value="cancelled">Đã hủy</option>
-              </select>
-            </div>
-          )}
-          <div className={modalStyles.formActions}>
-            <Button type="button" variant="secondary" onClick={handleCloseModal}>
-              Hủy
-            </Button>
-            <Button type="submit">
-              {editingOrder ? 'Cập nhật' : 'Thêm'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        editingOrder={editingOrder}
+        viewOnly={isViewOnly}
+        products={products}
+        vouchers={vouchers}
+        addOrder={addOrder}
+        updateOrder={updateOrder}
+      />
     </div>
   );
 };
