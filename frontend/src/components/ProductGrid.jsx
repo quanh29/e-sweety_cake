@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import styles from './ProductGrid.module.css';
+import { publicAPI } from '../utils/api';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
@@ -13,11 +14,7 @@ const ProductGrid = () => {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`${SERVER_URL}/api/products`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch products');
-                }
-                const data = await response.json();
+                const data = await publicAPI.getProducts();
                 
                 const formattedProducts = data.map(p => ({
                     id: p.prod_id,

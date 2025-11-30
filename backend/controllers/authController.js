@@ -1,5 +1,6 @@
 import { findUserByUsername, validatePassword, storeRefreshToken, findRefreshToken, revokeRefreshToken, createUser } from '../data/users.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../services/authService.js';
+import pool from '../config/mysql.js';
 
 export const register = async (req, res) => {
     try {
@@ -27,6 +28,12 @@ export const login = async (req, res) => {
         const user = await findUserByUsername(username);
         if (!user || !validatePassword(password, user.hashed_password)) {
             return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Check if user is active
+        if (!user.is_actived) {
+            console.log('[login] User account is deactivated:', user.username);
+            return res.status(403).json({ message: 'Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.' });
         }
 
         console.log('[login] User authenticated:', user.username);
@@ -69,7 +76,15 @@ export const login = async (req, res) => {
         res.cookie('refreshToken', refreshToken, cookieOptions);
         console.log('[login] Set new refresh token cookie with options:', cookieOptions);
 
-        res.json({ accessToken });
+        res.json({ 
+            accessToken,
+            user: {
+                userId: user.user_id,
+                fullName: user.full_name,
+                username: user.username,
+                isAdmin: user.is_admin === 1
+            }
+        });
     } catch (err) {
         console.error('Login error', err);
         res.status(500).json({ message: 'Internal server error' });
@@ -110,6 +125,21 @@ export const refresh = async (req, res) => {
             return res.status(403).json({ message: 'User not found' });
         }
 
+        // Check if user is still active
+        if (!user.is_actived) {
+            console.log('[refresh] User account is deactivated:', user.username);
+            // Revoke the refresh token since user is banned
+            await revokeRefreshToken(oldRefreshToken);
+            res.cookie('refreshToken', '', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+                expires: new Date(0),
+                path: '/'
+            });
+            return res.status(403).json({ message: 'Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.' });
+        }
+
     // One-time use: revoke the old refresh token
     console.log('[refresh] Revoking old refresh token id:', stored.token_id);
     await revokeRefreshToken(oldRefreshToken);
@@ -143,6 +173,37 @@ export const refresh = async (req, res) => {
         res.json({ accessToken: newAccessToken });
     } catch (err) {
         console.error('Refresh error', err);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getCurrentUser = async (req, res) => {
+    try {
+        // req.user is set by authenticateJWT middleware with { id, username }
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ message: 'Not authenticated' });
+        }
+
+        // Fetch full user info from database
+        const [rows] = await pool.query(
+            'SELECT user_id, full_name, username, is_admin FROM users WHERE user_id = ? AND is_actived = 1',
+            [userId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const user = rows[0];
+        res.json({
+            userId: user.user_id,
+            fullName: user.full_name,
+            username: user.username,
+            isAdmin: user.is_admin === 1
+        });
+    } catch (err) {
+        console.error('Get current user error', err);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

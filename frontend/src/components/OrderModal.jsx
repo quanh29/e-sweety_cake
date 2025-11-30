@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import Modal from './Modal';
 import Button from './Button';
 import styles from './OrderModal.module.css';
@@ -76,25 +77,63 @@ const OrderModal = ({ isOpen, onClose, editingOrder, products = [], vouchers = [
       return;
     }
     if (String(voucherCode).toLowerCase() === 'none') {
-      // Treat NONE as empty
+      // Explicit 'NONE' should be considered invalid by user request
+      toast.error('Mã giảm giá không hợp lệ!');
       setAppliedVoucherCode('');
       return;
     }
     const voucher = vouchers.find(v => v.code.toLowerCase() === voucherCode.toLowerCase());
-    if (voucher) {
-      setAppliedVoucherCode(voucherCode);
-      alert(`Đã áp dụng mã giảm giá: ${voucher.code}`);
-    } else {
-      alert('Mã giảm giá không hợp lệ!');
+    if (!voucher) {
+      toast.error('Mã giảm giá không hợp lệ!');
       setAppliedVoucherCode('');
+      return;
     }
+
+    // Check if voucher is expired
+    if (voucher.endDate) {
+      const now = new Date();
+      const endDate = new Date(voucher.endDate);
+      if (now > endDate) {
+        toast.error('Mã giảm giá đã hết hạn sử dụng!');
+        setAppliedVoucherCode('');
+        return;
+      }
+    }
+
+    // Check if voucher has reached usage limit
+    if (voucher.used >= voucher.quantity) {
+      toast.error('Mã giảm giá đã hết lượt sử dụng!');
+      setAppliedVoucherCode('');
+      return;
+    }
+
+    // Check if voucher has started
+    if (voucher.startDate) {
+      const now = new Date();
+      const startDate = new Date(voucher.startDate);
+      if (now < startDate) {
+        toast.error('Mã giảm giá chưa đến thời gian sử dụng!');
+        setAppliedVoucherCode('');
+        return;
+      }
+    }
+
+    // Check if voucher is active
+    if (!voucher.isActive) {
+      toast.error('Mã giảm giá đã bị vô hiệu hóa!');
+      setAppliedVoucherCode('');
+      return;
+    }
+
+    setAppliedVoucherCode(voucherCode);
+    toast.success(`Đã áp dụng mã giảm giá: ${voucher.code}`);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const finalItems = orderItems.filter(item => item.productId).map(item => ({ ...item, subtotal: item.quantity * item.price }));
     if (finalItems.length === 0) {
-      alert('Vui lòng thêm ít nhất một sản phẩm vào đơn hàng.');
+      toast.error('Vui lòng thêm ít nhất một sản phẩm vào đơn hàng.');
       return;
     }
     const orderData = {
@@ -184,7 +223,15 @@ const OrderModal = ({ isOpen, onClose, editingOrder, products = [], vouchers = [
 
         <div className={styles.formGroup}>
           <label>Phí giao hàng</label>
-          <input type="text" placeholder="Nhập phí giao hàng (đ)" value={shippingFee || ''} onChange={(e) => { const value = e.target.value.replace(/\D/g, ''); setShippingFee(value ? parseInt(value) : 0); }} />
+          <input
+            type="text"
+            placeholder="Nhập phí giao hàng (đ)"
+            value={shippingFee || ''}
+            onChange={(e) => { const value = e.target.value.replace(/\D/g, ''); setShippingFee(value ? parseInt(value) : 0); }}
+            readOnly={viewOnly}
+            disabled={viewOnly}
+            aria-disabled={viewOnly}
+          />
         </div>
 
         <div className={styles.formGroup}>

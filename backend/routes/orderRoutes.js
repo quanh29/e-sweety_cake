@@ -4,6 +4,9 @@ import { authenticateJWT, authorizeRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Public route for creating orders (no authentication required)
+router.post('/public/orders', orderController.createPublicOrder);
+
 // All order routes are protected and require at least 'user' role (which admin has)
 router.use(authenticateJWT, authorizeRoles('user'));
 

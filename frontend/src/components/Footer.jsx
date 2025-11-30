@@ -1,0 +1,94 @@
+import { Facebook, Instagram, Mail, MapPin, Phone, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import styles from './Footer.module.css';
+
+const Footer = () => {
+    const currentYear = new Date().getFullYear();
+
+    return (
+        <footer className={styles.footer}>
+            <div className={styles.container}>
+                <div className={styles.footerGrid}>
+                    {/* Company Info */}
+                    <div className={styles.footerColumn}>
+                        <h3 className={styles.footerTitle}>
+                            <i className="fas fa-birthday-cake"></i> Sweet Bakery
+                        </h3>
+                        <p className={styles.footerDesc}>
+                            Mang đến những chiếc bánh ngọt thơm ngon, được làm từ nguyên liệu tươi mới và tự nhiên nhất. 
+                            Chúng tôi cam kết chất lượng và hương vị tuyệt hảo trong từng sản phẩm.
+                        </p>
+                        <div className={styles.socialLinks}>
+                            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                                <Facebook size={24} />
+                            </a>
+                            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                                <Instagram size={24} />
+                            </a>
+                            <a href="mailto:info@sweetbakery.com" aria-label="Email">
+                                <Mail size={24} />
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* Quick Links */}
+                    <div className={styles.footerColumn}>
+                        <h4 className={styles.columnTitle}>Liên kết nhanh</h4>
+                        <ul className={styles.linkList}>
+                            <li><Link to="/">Trang chủ</Link></li>
+                            <li><a href="/#products">Sản phẩm</a></li>
+                            <li><Link to="/about">Giới thiệu</Link></li>
+                            <li><Link to="/contact">Liên hệ</Link></li>
+                        </ul>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div className={styles.footerColumn}>
+                        <h4 className={styles.columnTitle}>Liên hệ</h4>
+                        <ul className={styles.contactList}>
+                            <li>
+                                <MapPin size={18} />
+                                <span>123 Đường ABC, Quận 1, TP.HCM</span>
+                            </li>
+                            <li>
+                                <Phone size={18} />
+                                <span><a href="tel:+84123456789">0123 456 789</a></span>
+                            </li>
+                            <li>
+                                <Mail size={18} />
+                                <span><a href="mailto:info@sweetbakery.com">info@sweetbakery.com</a></span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Business Hours */}
+                    <div className={styles.footerColumn}>
+                        <h4 className={styles.columnTitle}>Giờ mở cửa</h4>
+                        <ul className={styles.hoursList}>
+                            <li>
+                                <Clock size={18} />
+                                <div>
+                                    <strong>Thứ 2 - Thứ 6:</strong>
+                                    <span>8:00 - 20:00</span>
+                                </div>
+                            </li>
+                            <li>
+                                <Clock size={18} />
+                                <div>
+                                    <strong>Thứ 7 - Chủ nhật:</strong>
+                                    <span>9:00 - 21:00</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className={styles.footerBottom}>
+                    <p>&copy; {currentYear} Sweet Bakery. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    );
+};
+
+export default Footer;

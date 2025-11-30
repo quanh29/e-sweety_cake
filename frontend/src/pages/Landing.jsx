@@ -1,6 +1,7 @@
 import Header from '../components/Header';
 import Hero from '../components/Hero';
 import ProductGrid from '../components/ProductGrid';
+import Footer from '../components/Footer';
 
 const Landing = ({ onCartClick }) => {
   return (
@@ -8,6 +9,7 @@ const Landing = ({ onCartClick }) => {
       <Header onCartClick={onCartClick} />
       <Hero />
       <ProductGrid />
+      <Footer />
     </>
   );
 };

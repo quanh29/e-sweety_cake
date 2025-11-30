@@ -1,11 +1,20 @@
+import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import styles from './Header.module.css';
 
 const Header = ({ onCartClick }) => {
     const { getCartItemsCount } = useCart();
+    const location = useLocation();
 
     const scrollToSection = (e, sectionId) => {
         e.preventDefault();
+        
+        // If not on home page, navigate to home first
+        if (location.pathname !== '/') {
+            window.location.href = `/#${sectionId}`;
+            return;
+        }
+        
         const element = document.getElementById(sectionId);
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -15,16 +24,16 @@ const Header = ({ onCartClick }) => {
     return (
         <header className={styles.header}>
             <div className={styles.container}>
-                <div className={styles.logo}>
+                <Link to="/" className={styles.logo}>
                     <i className="fas fa-birthday-cake"></i>
                     <h1>Sweet Bakery</h1>
-                </div>
+                </Link>
                 <nav className={styles.nav}>
                     <ul>
-                        <li><a href="#home" onClick={(e) => scrollToSection(e, 'home')}>Trang chủ</a></li>
-                        <li><a href="#products" onClick={(e) => scrollToSection(e, 'products')}>Sản phẩm</a></li>
-                        <li><a href="#about" onClick={(e) => scrollToSection(e, 'about')}>Giới thiệu</a></li>
-                        <li><a href="#contact" onClick={(e) => scrollToSection(e, 'contact')}>Liên hệ</a></li>
+                        <li><Link to="/">Trang chủ</Link></li>
+                        <li><a href="/#products" onClick={(e) => scrollToSection(e, 'products')}>Sản phẩm</a></li>
+                        <li><Link to="/about">Giới thiệu</Link></li>
+                        <li><Link to="/contact">Liên hệ</Link></li>
                     </ul>
                 </nav>
                 <div className={styles.cartIcon} onClick={onCartClick}>

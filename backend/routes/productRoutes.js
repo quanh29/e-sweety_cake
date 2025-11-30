@@ -18,6 +18,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+// Public routes (no authentication required)
+router.get('/public/products', productController.getPublicProducts);
+router.get('/public/products/:id', productController.getPublicProduct);
+
 // user routes
 router.get('/', authenticateJWT, authorizeRoles('user'), productController.getProducts);
 router.get('/:id', authenticateJWT, authorizeRoles('user'), productController.getProduct);

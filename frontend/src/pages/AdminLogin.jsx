@@ -43,12 +43,12 @@ const AdminLogin = () => {
         { withCredentials: true }
       );
 
-      // Expecting { accessToken, isAdmin } and backend sets HttpOnly refresh token cookie
-      const { accessToken, isAdmin } = response.data || {};
+      // Expecting { accessToken, isAdmin, user } and backend sets HttpOnly refresh token cookie
+      const { accessToken, user } = response.data || {};
       if (accessToken) {
         sessionStorage.setItem('accessToken', accessToken);
       }
-      if (isAdmin) {
+      if (user?.isAdmin) {
         sessionStorage.setItem('isAdmin', 'true');
       }
       toast.success('Đăng nhập thành công');

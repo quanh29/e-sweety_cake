@@ -3,6 +3,30 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Public controllers (no authentication required)
+export const getPublicProducts = async (req, res) => {
+    try {
+        const products = await productService.getAllProducts();
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching products', error: error.message });
+    }
+};
+
+export const getPublicProduct = async (req, res) => {
+    try {
+        const product = await productService.getProductById(req.params.id);
+        if (product) {
+            res.json(product);
+        } else {
+            res.status(404).json({ message: 'Product not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching product', error: error.message });
+    }
+};
+
+// Authenticated user controllers
 export const getProducts = async (req, res) => {
     try {
         const products = await productService.getAllProducts();

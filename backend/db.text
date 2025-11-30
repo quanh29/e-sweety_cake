@@ -1,7 +1,7 @@
 CREATE TABLE users (
 	user_id				VARCHAR(36) PRIMARY KEY,
     full_name			VARCHAR(255) NOT NULL,
-    username			VARCHAR(255) NOT NULL,
+    username			VARCHAR(255) UNIQUE NOT NULL,
     hashed_password		VARCHAR(255) NOT NULL,
     salt				VARCHAR(255) NOT NULL,
     is_actived			BOOLEAN DEFAULT TRUE,
@@ -33,8 +33,10 @@ CREATE TABLE vouchers(
     is_absolute		BOOLEAN NOT NULL,
     amount			DECIMAL NOT NULL,
     quantity		DECIMAL NOT NULL,
+    is_active		BOOLEAN NOT NULL,
 	created_at		TIMESTAMP DEFAULT now(),
-    expired_at		TIMESTAMP NOT NULL
+    start_at		TIMESTAMP NOT NULL,
+    expired_at		TIMESTAMP NULL
 );
 
 CREATE TABLE order_status (
@@ -48,7 +50,7 @@ CREATE TABLE orders (
 	phone_number	VARCHAR(15) NOT NULL,
     address			VARCHAR(255) NOT NULL,
     shipping_fee	DECIMAL,
-    voucher_code	VARCHAR(255),
+    voucher_code	VARCHAR(255) NULL,
     note			TEXT,
     created_by		VARCHAR(36),
     created_at		TIMESTAMP DEFAULT now(),
@@ -84,4 +86,11 @@ CREATE TABLE entry_details (
     PRIMARY KEY(entry_id, prod_id),
     FOREIGN KEY(entry_id) REFERENCES stock_entries(entry_id),
     FOREIGN KEY(prod_id) REFERENCES products(prod_id)
+);
+
+CREATE TABLE sales(
+	order_id			VARCHAR(36),
+    user_id				VARCHAR(36),
+    FOREIGN KEY(order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY(user_id) REFERENCES users(user_id)
 );

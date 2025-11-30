@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { fetchWithAuth } from '../utils/api';
+import { fetchWithAuth, voucherAPI, userAPI, importAPI } from '../utils/api';
 
 const AdminContext = createContext();
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
@@ -20,6 +20,7 @@ export function AdminProvider({ children }) {
   const [imports, setImports] = useState([]);
   const [vouchers, setVouchers] = useState([]);
   const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -35,6 +36,13 @@ export function AdminProvider({ children }) {
 
       try {
         setLoading(true);
+        
+        // Fetch Current User
+        const userResponse = await fetchWithAuth(`${API_URL}/auth/me`);
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setCurrentUser(userData);
+        }
         
         // Fetch Products
         const productResponse = await fetchWithAuth(`${API_URL}/products`);
@@ -74,7 +82,17 @@ export function AdminProvider({ children }) {
         }));
         setOrders(formattedOrders);
 
-        // Add other data fetching here (vouchers, users etc.)
+        // Fetch Vouchers
+        const voucherData = await voucherAPI.getAll();
+        setVouchers(voucherData);
+
+        // Fetch Users
+        const userData = await userAPI.getAll();
+        setUsers(userData);
+
+        // Fetch Imports
+        const importData = await importAPI.getAll();
+        setImports(importData);
 
         setError(null);
       } catch (err) {
@@ -121,6 +139,22 @@ export function AdminProvider({ children }) {
       };
       
       setOrders(prev => [formattedNewOrder, ...prev]);
+      
+      // Refetch products to update stock
+      const productResponse = await fetchWithAuth(`${API_URL}/products`);
+      if (productResponse.ok) {
+        const productData = await productResponse.json();
+        const formattedProducts = productData.map(p => ({
+          id: p.prod_id,
+          name: p.prod_name,
+          description: p.prod_description,
+          price: parseFloat(p.price),
+          stock: parseInt(p.stock, 10),
+          image: p.picture_url ? `${SERVER_URL}${p.picture_url}` : 'https://via.placeholder.com/150'
+        }));
+        setProducts(formattedProducts);
+      }
+      
       toast.success('Thêm đơn hàng thành công!');
       return formattedNewOrder;
     } catch (err) {
@@ -138,6 +172,22 @@ export function AdminProvider({ children }) {
       if (!response.ok) throw new Error('Failed to update order');
       // Refetch or update state locally
       setOrders(prev => prev.map(o => o.id === id ? { ...o, ...data, status: o.status } : o)); // Keep original status on full update
+      
+      // Refetch products to update stock
+      const productResponse = await fetchWithAuth(`${API_URL}/products`);
+      if (productResponse.ok) {
+        const productData = await productResponse.json();
+        const formattedProducts = productData.map(p => ({
+          id: p.prod_id,
+          name: p.prod_name,
+          description: p.prod_description,
+          price: parseFloat(p.price),
+          stock: parseInt(p.stock, 10),
+          image: p.picture_url ? `${SERVER_URL}${p.picture_url}` : 'https://via.placeholder.com/150'
+        }));
+        setProducts(formattedProducts);
+      }
+      
       toast.success('Cập nhật đơn hàng thành công!');
     } catch (err) {
       console.error("Update order error:", err);
@@ -153,6 +203,22 @@ export function AdminProvider({ children }) {
       });
       if (!response.ok) throw new Error('Failed to update order status');
       setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+      
+      // Refetch products to update stock (especially for cancel operations)
+      const productResponse = await fetchWithAuth(`${API_URL}/products`);
+      if (productResponse.ok) {
+        const productData = await productResponse.json();
+        const formattedProducts = productData.map(p => ({
+          id: p.prod_id,
+          name: p.prod_name,
+          description: p.prod_description,
+          price: parseFloat(p.price),
+          stock: parseInt(p.stock, 10),
+          image: p.picture_url ? `${SERVER_URL}${p.picture_url}` : 'https://via.placeholder.com/150'
+        }));
+        setProducts(formattedProducts);
+      }
+      
       toast.success('Cập nhật trạng thái đơn hàng thành công!');
     } catch (err) {
       console.error("Update order status error:", err);
@@ -167,6 +233,22 @@ export function AdminProvider({ children }) {
       });
       if (!response.ok) throw new Error('Failed to delete order');
       setOrders(prev => prev.filter(o => o.id !== id));
+      
+      // Refetch products to update stock
+      const productResponse = await fetchWithAuth(`${API_URL}/products`);
+      if (productResponse.ok) {
+        const productData = await productResponse.json();
+        const formattedProducts = productData.map(p => ({
+          id: p.prod_id,
+          name: p.prod_name,
+          description: p.prod_description,
+          price: parseFloat(p.price),
+          stock: parseInt(p.stock, 10),
+          image: p.picture_url ? `${SERVER_URL}${p.picture_url}` : 'https://via.placeholder.com/150'
+        }));
+        setProducts(formattedProducts);
+      }
+      
       toast.success('Xóa đơn hàng thành công!');
     } catch (err) {
       console.error("Delete order error:", err);
@@ -270,58 +352,169 @@ export function AdminProvider({ children }) {
     }
   };
 
-
-  // Import functions
-  const addImport = (importData) => {
-    const newImport = { ...importData, id: Date.now() };
-    setImports(prev => [...prev, newImport]);
-    
-    // Update product stock
-    importData.items.forEach(item => {
-      updateProduct(item.productId, {
-        stock: products.find(p => p.id === item.productId)?.stock + item.quantity
-      });
-    });
-    
-    return newImport;
-  };
-
-  const updateImport = (id, data) => {
-    setImports(prev => prev.map(i => i.id === id ? { ...i, ...data } : i));
-  };
-
-  const deleteImport = (id) => {
-    setImports(prev => prev.filter(i => i.id !== id));
-  };
-
   // Voucher functions
-  const addVoucher = (voucher) => {
-    const newVoucher = { ...voucher, id: Date.now(), used: 0 };
-    setVouchers(prev => [...prev, newVoucher]);
-    return newVoucher;
+  const addVoucher = async (voucherData) => {
+    try {
+      const newVoucher = await voucherAPI.create(voucherData);
+      setVouchers(prev => [...prev, newVoucher]);
+      toast.success('Thêm voucher thành công!');
+      return newVoucher;
+    } catch (err) {
+      console.error("Add voucher error:", err);
+      toast.error(`Lỗi: ${err.message}`);
+    }
   };
 
-  const updateVoucher = (id, data) => {
-    setVouchers(prev => prev.map(v => v.id === id ? { ...v, ...data } : v));
-  };
-
-  const deleteVoucher = (id) => {
-    setVouchers(prev => prev.filter(v => v.id !== id));
+  const toggleVoucherStatus = async (code) => {
+    try {
+      const result = await voucherAPI.toggleStatus(code);
+      setVouchers(prev => prev.map(v => v.code === code ? { ...v, isActive: result.isActive } : v));
+      toast.success(result.message);
+    } catch (err) {
+      console.error("Toggle voucher status error:", err);
+      toast.error(`Lỗi: ${err.message}`);
+    }
   };
 
   // User functions
-  const addUser = (user) => {
-    const newUser = { ...user, id: Date.now(), createdAt: new Date() };
-    setUsers(prev => [...prev, newUser]);
-    return newUser;
+  const addUser = async (userData) => {
+    try {
+      const newUser = await userAPI.create(userData);
+      setUsers(prev => [...prev, newUser]);
+      toast.success('Thêm người dùng thành công!');
+      return newUser;
+    } catch (err) {
+      console.error("Add user error:", err);
+      toast.error(`Lỗi: ${err.message}`);
+    }
   };
 
-  const updateUser = (id, data) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, ...data } : u));
+  const updateUser = async (id, userData) => {
+    try {
+      const updatedUser = await userAPI.update(id, userData);
+      setUsers(prev => prev.map(u => u.id === id ? updatedUser : u));
+      
+      // If updating current user, refetch current user info
+      if (currentUser && currentUser.userId === id) {
+        const userResponse = await fetchWithAuth(`${API_URL}/auth/me`);
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setCurrentUser(userData);
+        }
+      }
+      
+      toast.success('Cập nhật người dùng thành công!');
+    } catch (err) {
+      console.error("Update user error:", err);
+      toast.error(`Lỗi: ${err.message}`);
+    }
   };
 
-  const deleteUser = (id) => {
-    setUsers(prev => prev.filter(u => u.id !== id));
+  const deleteUser = async (id) => {
+    try {
+      await userAPI.delete(id);
+      setUsers(prev => prev.filter(u => u.id !== id));
+      toast.success('Xóa người dùng thành công!');
+    } catch (err) {
+      console.error("Delete user error:", err);
+      toast.error(`Lỗi: ${err.message}`);
+    }
+  };
+
+  const toggleUserStatus = async (id) => {
+    try {
+      const result = await userAPI.toggleStatus(id);
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, status: result.status } : u));
+      toast.success(result.message);
+    } catch (err) {
+      console.error("Toggle user status error:", err);
+      toast.error(`Lỗi: ${err.message}`);
+    }
+  };
+
+  // Import functions
+  const addImport = async (importData) => {
+    try {
+      const newImport = await importAPI.create(importData);
+      setImports(prev => [newImport, ...prev]);
+      
+      // Refetch products to update stock numbers
+      const productResponse = await fetchWithAuth(`${API_URL}/products`);
+      if (productResponse.ok) {
+        const productData = await productResponse.json();
+        const formattedProducts = productData.map(p => ({
+          id: p.prod_id,
+          name: p.prod_name,
+          description: p.prod_description,
+          price: parseFloat(p.price),
+          stock: parseInt(p.stock, 10),
+          image: p.picture_url ? `${SERVER_URL}${p.picture_url}` : 'https://via.placeholder.com/150'
+        }));
+        setProducts(formattedProducts);
+      }
+      
+      toast.success('Thêm đơn nhập hàng thành công!');
+    } catch (error) {
+      console.error('Add import error:', error);
+      toast.error(`Lỗi thêm đơn nhập: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const updateImport = async (importId, importData) => {
+    try {
+      const updatedImport = await importAPI.update(importId, importData);
+      setImports(prev => prev.map(imp => imp.id === importId ? updatedImport : imp));
+      
+      // Refetch products to update stock numbers
+      const productResponse = await fetchWithAuth(`${API_URL}/products`);
+      if (productResponse.ok) {
+        const productData = await productResponse.json();
+        const formattedProducts = productData.map(p => ({
+          id: p.prod_id,
+          name: p.prod_name,
+          description: p.prod_description,
+          price: parseFloat(p.price),
+          stock: parseInt(p.stock, 10),
+          image: p.picture_url ? `${SERVER_URL}${p.picture_url}` : 'https://via.placeholder.com/150'
+        }));
+        setProducts(formattedProducts);
+      }
+      
+      toast.success('Cập nhật đơn nhập hàng thành công!');
+    } catch (error) {
+      console.error('Update import error:', error);
+      toast.error(`Lỗi cập nhật đơn nhập: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const deleteImport = async (importId) => {
+    try {
+      await importAPI.delete(importId);
+      setImports(prev => prev.filter(imp => imp.id !== importId));
+      
+      // Refetch products to update stock numbers
+      const productResponse = await fetchWithAuth(`${API_URL}/products`);
+      if (productResponse.ok) {
+        const productData = await productResponse.json();
+        const formattedProducts = productData.map(p => ({
+          id: p.prod_id,
+          name: p.prod_name,
+          description: p.prod_description,
+          price: parseFloat(p.price),
+          stock: parseInt(p.stock, 10),
+          image: p.picture_url ? `${SERVER_URL}${p.picture_url}` : 'https://via.placeholder.com/150'
+        }));
+        setProducts(formattedProducts);
+      }
+      
+      toast.success('Xóa đơn nhập hàng thành công!');
+    } catch (error) {
+      console.error('Delete import error:', error);
+      toast.error(`Lỗi xóa đơn nhập: ${error.message}`);
+      throw error;
+    }
   };
 
   const logout = async () => {
@@ -340,6 +533,7 @@ export function AdminProvider({ children }) {
       setImports([]);
       setVouchers([]);
       setUsers([]);
+      setCurrentUser(null);
       setError(null);
     }
   };
@@ -350,6 +544,13 @@ export function AdminProvider({ children }) {
 
     try {
       setLoading(true);
+      
+      // Fetch Current User Info
+      const currentUserResponse = await fetchWithAuth(`${API_URL}/auth/me`);
+      if (currentUserResponse.ok) {
+        const currentUserData = await currentUserResponse.json();
+        setCurrentUser(currentUserData);
+      }
       
       // Fetch Products
       const productResponse = await fetchWithAuth(`${API_URL}/products`);
@@ -389,6 +590,18 @@ export function AdminProvider({ children }) {
       }));
       setOrders(formattedOrders);
 
+      // Fetch Vouchers
+      const voucherData = await voucherAPI.getAll();
+      setVouchers(voucherData);
+
+      // Fetch Users
+      const userData = await userAPI.getAll();
+      setUsers(userData);
+
+      // Fetch Imports
+      const importData = await importAPI.getAll();
+      setImports(importData);
+
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -405,6 +618,7 @@ export function AdminProvider({ children }) {
     imports,
     vouchers,
     users,
+    currentUser,
     loading,
     error,
     addOrder,
@@ -418,11 +632,11 @@ export function AdminProvider({ children }) {
     updateImport,
     deleteImport,
     addVoucher,
-    updateVoucher,
-    deleteVoucher,
+    toggleVoucherStatus,
     addUser,
     updateUser,
     deleteUser,
+    toggleUserStatus,
     logout,
     refetchData
   };

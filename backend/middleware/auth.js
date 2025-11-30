@@ -4,7 +4,7 @@ import pool from '../config/mysql.js';
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'access-secret';
 
-export function authenticateJWT(req, res, next) {
+export async function authenticateJWT(req, res, next) {
     const authHeader = req.headers.authorization || req.headers.Authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ message: 'Missing or invalid Authorization header' });
@@ -13,6 +13,18 @@ export function authenticateJWT(req, res, next) {
     const token = authHeader.split(' ')[1];
     try {
         const payload = jwt.verify(token, ACCESS_TOKEN_SECRET);
+        
+        // Check if user is still active
+        try {
+            const [rows] = await pool.query('SELECT is_actived FROM users WHERE user_id = ?', [payload.id]);
+            if (rows.length === 0 || !rows[0].is_actived) {
+                return res.status(403).json({ message: 'Tài khoản đã bị vô hiệu hóa' });
+            }
+        } catch (dbErr) {
+            console.error('Database error checking user status:', dbErr);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
+        
         req.user = payload; // payload will have { id, username }
         next();
     } catch (err) {

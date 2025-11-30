@@ -7,7 +7,7 @@ import styles from './AdminCommon.module.css';
 import modalStyles from '../components/Modal.module.css';
 
 const UsersPage = () => {
-  const { users, addUser, updateUser, deleteUser } = useAdmin();
+  const { users, addUser, updateUser, deleteUser, toggleUserStatus } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -39,11 +39,13 @@ const UsersPage = () => {
 
     const userData = {
       fullname: formData.get('fullname'),
-      username: formData.get('username').toLowerCase(),
-      role: formData.get('role'),
-      status: formData.get('status'),
-      note: formData.get('note')
+      role: formData.get('role')
     };
+
+    // Username is only included when creating (not when editing)
+    if (!editingUser) {
+      userData.username = formData.get('username').toLowerCase();
+    }
 
     // Only update password if provided
     const password = formData.get('password');
@@ -73,7 +75,11 @@ const UsersPage = () => {
 
   const handleToggleStatus = (id) => {
     const user = users.find((u) => u.id === id);
-    updateUser(id, { status: user.status === 'active' ? 'inactive' : 'active' });
+    if (user?.role === 'admin') {
+      alert('Không thể vô hiệu hóa tài khoản admin!');
+      return;
+    }
+    toggleUserStatus(id);
   };
 
   return (
@@ -94,8 +100,7 @@ const UsersPage = () => {
           <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
             <option value="">Tất cả vai trò</option>
             <option value="admin">Admin</option>
-            <option value="manager">Manager</option>
-            <option value="staff">Staff</option>
+            <option value="user">User</option>
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="">Tất cả trạng thái</option>
@@ -112,14 +117,13 @@ const UsersPage = () => {
               <th>Username</th>
               <th>Vai trò</th>
               <th>Trạng thái</th>
-              <th>Ngày tạo</th>
               <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>
+                <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
                   Chưa có người dùng nào
                 </td>
               </tr>
@@ -140,7 +144,6 @@ const UsersPage = () => {
                       {user.status === 'active' ? 'Hoạt động' : 'Vô hiệu hóa'}
                     </span>
                   </td>
-                  <td>{formatDate(user.createdAt)}</td>
                   <td>
                     <div className={styles.actionButtons}>
                       <Button
@@ -193,22 +196,10 @@ const UsersPage = () => {
           </div>
           <div className={modalStyles.formGroup}>
             <label>Vai trò</label>
-            <select name="role" defaultValue={editingUser?.role || 'staff'}>
+            <select name="role" defaultValue={editingUser?.role || 'user'}>
               <option value="admin">Admin</option>
-              <option value="manager">Manager</option>
-              <option value="staff">Staff</option>
+              <option value="user">User</option>
             </select>
-          </div>
-          <div className={modalStyles.formGroup}>
-            <label>Trạng thái</label>
-            <select name="status" defaultValue={editingUser?.status || 'active'}>
-              <option value="active">Hoạt động</option>
-              <option value="inactive">Vô hiệu hóa</option>
-            </select>
-          </div>
-          <div className={modalStyles.formGroup}>
-            <label>Ghi chú</label>
-            <textarea name="note" defaultValue={editingUser?.note} />
           </div>
           <div className={modalStyles.formActions}>
             <Button type="button" variant="secondary" onClick={handleCloseModal}>

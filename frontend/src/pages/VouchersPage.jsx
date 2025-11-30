@@ -7,11 +7,10 @@ import styles from './AdminCommon.module.css';
 import modalStyles from '../components/Modal.module.css';
 
 const VouchersPage = () => {
-  const { vouchers, addVoucher, updateVoucher, deleteVoucher } = useAdmin();
+  const { vouchers, addVoucher, toggleVoucherStatus } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingVoucher, setEditingVoucher] = useState(null);
 
   const filteredVouchers = vouchers.filter((voucher) => {
     const matchSearch = voucher.code?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -19,13 +18,11 @@ const VouchersPage = () => {
     return matchSearch && matchType;
   });
 
-  const handleOpenModal = (voucher = null) => {
-    setEditingVoucher(voucher);
+  const handleOpenModal = () => {
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setEditingVoucher(null);
     setIsModalOpen(false);
   };
 
@@ -33,29 +30,52 @@ const VouchersPage = () => {
     e.preventDefault();
     const formData = new FormData(e.target);
 
+    const startDateValue = formData.get('startDate');
+    const endDateValue = formData.get('endDate');
+
+    // Validate dates are not in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (startDateValue) {
+      const startDate = new Date(startDateValue);
+      startDate.setHours(0, 0, 0, 0);
+      if (startDate < today) {
+        alert('Ngày bắt đầu không được là ngày trong quá khứ');
+        return;
+      }
+    }
+
+    if (endDateValue) {
+      const endDate = new Date(endDateValue);
+      endDate.setHours(0, 0, 0, 0);
+      if (endDate < today) {
+        alert('Ngày kết thúc không được là ngày trong quá khứ');
+        return;
+      }
+      const startDate = new Date(startDateValue || new Date());
+      startDate.setHours(0, 0, 0, 0);
+      if (endDate < startDate) {
+        alert('Ngày kết thúc phải sau ngày bắt đầu');
+        return;
+      }
+    }
+
     const voucherData = {
       code: formData.get('code').trim().toUpperCase(),
       type: formData.get('type'),
       value: parseFloat(formData.get('value')),
       quantity: parseInt(formData.get('quantity')),
-      startDate: new Date(formData.get('startDate')),
-      endDate: new Date(formData.get('endDate')),
-      description: formData.get('description')
+      startDate: startDateValue ? new Date(startDateValue) : new Date(),
+      endDate: endDateValue ? new Date(endDateValue) : null
     };
 
-    if (editingVoucher) {
-      updateVoucher(editingVoucher.id, voucherData);
-    } else {
-      addVoucher(voucherData);
-    }
-
+    addVoucher(voucherData);
     handleCloseModal();
   };
 
-  const handleDelete = (id) => {
-    if (confirm('Bạn có chắc muốn xóa voucher này?')) {
-      deleteVoucher(id);
-    }
+  const handleToggleStatus = (code) => {
+    toggleVoucherStatus(code);
   };
 
   return (
@@ -90,13 +110,14 @@ const VouchersPage = () => {
               <th>Số lượng</th>
               <th>Đã dùng</th>
               <th>Hạn sử dụng</th>
+              <th>Trạng thái</th>
               <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {filteredVouchers.length === 0 ? (
               <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '20px' }}>
                   Chưa có voucher nào
                 </td>
               </tr>
@@ -108,14 +129,26 @@ const VouchersPage = () => {
                   <td>{voucher.type === 'percentage' ? `${voucher.value}%` : `${voucher.value.toLocaleString()}đ`}</td>
                   <td>{voucher.quantity}</td>
                   <td>{voucher.used || 0}</td>
-                  <td>{formatDate(voucher.endDate)}</td>
+                  <td>{voucher.endDate ? formatDate(voucher.endDate) : 'Không giới hạn'}</td>
+                  <td>
+                    <span style={{ 
+                      padding: '4px 8px', 
+                      borderRadius: '4px', 
+                      fontSize: '0.85em',
+                      backgroundColor: voucher.isActive ? '#d4edda' : '#f8d7da',
+                      color: voucher.isActive ? '#155724' : '#721c24'
+                    }}>
+                      {voucher.isActive ? 'Đang hoạt động' : 'Vô hiệu hóa'}
+                    </span>
+                  </td>
                   <td>
                     <div className={styles.actionButtons}>
-                      <Button size="sm" variant="warning" onClick={() => handleOpenModal(voucher)}>
-                        Sửa
-                      </Button>
-                      <Button size="sm" variant="danger" onClick={() => handleDelete(voucher.id)}>
-                        Xóa
+                      <Button 
+                        size="sm" 
+                        variant={voucher.isActive ? 'danger' : 'success'} 
+                        onClick={() => handleToggleStatus(voucher.code)}
+                      >
+                        {voucher.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'}
                       </Button>
                     </div>
                   </td>
@@ -129,55 +162,52 @@ const VouchersPage = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={editingVoucher ? 'Sửa voucher' : 'Thêm voucher mới'}
+        title="Thêm voucher mới"
       >
         <form onSubmit={handleSubmit}>
           <div className={modalStyles.formGroup}>
             <label>Mã voucher</label>
-            <input type="text" name="code" defaultValue={editingVoucher?.code} required />
+            <input type="text" name="code" required />
           </div>
           <div className={modalStyles.formGroup}>
             <label>Loại giảm giá</label>
-            <select name="type" defaultValue={editingVoucher?.type || 'percentage'}>
+            <select name="type" defaultValue="percentage">
               <option value="percentage">Phần trăm (%)</option>
               <option value="fixed">Số tiền cố định (VNĐ)</option>
             </select>
           </div>
           <div className={modalStyles.formGroup}>
             <label>Giá trị</label>
-            <input type="number" name="value" defaultValue={editingVoucher?.value} required min="0" />
+            <input type="number" name="value" required min="0" />
           </div>
           <div className={modalStyles.formGroup}>
             <label>Số lượng</label>
-            <input type="number" name="quantity" defaultValue={editingVoucher?.quantity} required min="1" />
+            <input type="number" name="quantity" required min="1" />
           </div>
           <div className={modalStyles.formGroup}>
             <label>Ngày bắt đầu</label>
             <input
               type="date"
               name="startDate"
-              defaultValue={editingVoucher?.startDate ? new Date(editingVoucher.startDate).toISOString().split('T')[0] : ''}
-              required
+              min={new Date().toISOString().split('T')[0]}
+              defaultValue={new Date().toISOString().split('T')[0]}
             />
+            <small style={{ color: '#666', fontSize: '0.85em' }}>Để trống để sử dụng ngày hiện tại</small>
           </div>
           <div className={modalStyles.formGroup}>
-            <label>Ngày kết thúc</label>
+            <label>Ngày kết thúc (tùy chọn)</label>
             <input
               type="date"
               name="endDate"
-              defaultValue={editingVoucher?.endDate ? new Date(editingVoucher.endDate).toISOString().split('T')[0] : ''}
-              required
+              min={new Date().toISOString().split('T')[0]}
             />
-          </div>
-          <div className={modalStyles.formGroup}>
-            <label>Mô tả</label>
-            <textarea name="description" defaultValue={editingVoucher?.description} />
+            <small style={{ color: '#666', fontSize: '0.85em' }}>Để trống nếu không giới hạn thời gian</small>
           </div>
           <div className={modalStyles.formActions}>
             <Button type="button" variant="secondary" onClick={handleCloseModal}>
               Hủy
             </Button>
-            <Button type="submit">{editingVoucher ? 'Cập nhật' : 'Thêm'}</Button>
+            <Button type="submit">Thêm</Button>
           </div>
         </form>
       </Modal>

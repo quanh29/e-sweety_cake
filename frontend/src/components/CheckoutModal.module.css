@@ -36,7 +36,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px;
-    background: linear-gradient(135deg, #ff6b9d 0%, #c86dd7 100%);
+    background: #4a2c2a;
     color: white;
     border-radius: 15px 15px 0 0;
 }
@@ -88,7 +88,7 @@
 .formGroup input:focus,
 .formGroup textarea:focus {
     outline: none;
-    border-color: #ff6b9d;
+    border-color: #d4806a;
 }
 
 .formGroup textarea {
@@ -151,7 +151,7 @@
 
 .voucherInputGroup input:focus {
     outline: none;
-    border-color: #ff6b9d;
+    border-color: #d4806a;
 }
 
 .voucherInputGroup input:disabled {
@@ -161,7 +161,7 @@
 
 .btnApplyVoucher {
     padding: 10px 20px;
-    background: #ff6b9d;
+    background: #d4806a;
     color: white;
     border: none;
     border-radius: 8px;
@@ -172,9 +172,9 @@
 }
 
 .btnApplyVoucher:hover:not(:disabled) {
-    background: #ff5a8c;
+    background: #c36b54;
     transform: translateY(-1px);
-    box-shadow: 0 3px 10px rgba(255, 107, 157, 0.3);
+    box-shadow: 0 3px 10px rgba(212, 128, 106, 0.3);
 }
 
 .btnApplyVoucher:disabled {
@@ -271,7 +271,7 @@
 }
 
 .orderTotal span:last-child {
-    color: #ff6b9d;
+    color: #d4806a;
 }
 
 .paymentMethod {
@@ -300,17 +300,19 @@
     font-size: 1rem;
     font-weight: 600;
     transition: all 0.3s;
-    background: linear-gradient(135deg, #ff6b9d 0%, #c86dd7 100%);
+    background: #d4806a;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
+    box-shadow: 0 4px 15px rgba(212, 128, 106, 0.3);
 }
 
 .btnSubmit:hover {
+    background: #c36b54;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(200, 109, 215, 0.4);
+    box-shadow: 0 6px 20px rgba(212, 128, 106, 0.4);
 }
 
 /* Responsive */
