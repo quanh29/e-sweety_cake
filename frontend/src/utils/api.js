@@ -6,8 +6,7 @@ const API_URL = `${SERVER_URL}/api`;
 // Axios instance for authenticated API calls
 const axiosInstance = axios.create({
   baseURL: API_URL,
-  withCredentials: true,
-  headers: { 'Content-Type': 'application/json' }
+  withCredentials: true
 });
 
 // Axios instance for public API calls (no auth)
@@ -45,6 +44,12 @@ axiosInstance.interceptors.request.use(
   config => {
     const token = sessionStorage.getItem('accessToken');
     if (token) config.headers['Authorization'] = `Bearer ${token}`;
+    
+    // Set Content-Type for non-FormData requests
+    if (!(config.data instanceof FormData)) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+    
     return config;
   },
   err => Promise.reject(err)
@@ -108,8 +113,11 @@ export const fetchWithAuth = async (url, options = {}) => {
       withCredentials: true
     };
 
+    // For FormData, remove Content-Type to let axios set it with boundary
     if (body instanceof FormData) {
       delete axiosConfig.headers['Content-Type'];
+      // Don't parse FormData as JSON
+      axiosConfig.data = body;
     }
 
     const response = await axiosInstance.request(axiosConfig);
