@@ -21,10 +21,18 @@ connectDB();
 app.use('/uploads', express.static('uploads'));
 app.use(express.json());
 
+// app.use(cors({
+//     origin: process.env.CORS_ORIGIN,
+//     credentials: true
+// }));
+
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: (origin, callback) => {
+        callback(null, origin);  // chấp nhận mọi origin, không thêm dấu /
+    },
     credentials: true
 }));
+
 
 app.use(cookieParser());
 //logging middleware (in vietnam timezone)
