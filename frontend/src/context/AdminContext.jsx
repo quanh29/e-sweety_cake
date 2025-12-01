@@ -77,6 +77,7 @@ export function AdminProvider({ children }) {
             price: parseFloat(item.price)
           })),
           subtotal: parseFloat(o.subtotal),
+          discount: parseFloat(o.discount || 0),
           total: parseFloat(o.total),
           createdAt: new Date(o.created_at)
         }));
@@ -134,6 +135,7 @@ export function AdminProvider({ children }) {
           price: parseFloat(item.price)
         })),
         subtotal: parseFloat(newOrderFromBackend.subtotal),
+        discount: parseFloat(newOrderFromBackend.discount || 0),
         total: parseFloat(newOrderFromBackend.total),
         createdAt: new Date(newOrderFromBackend.created_at)
       };
@@ -170,8 +172,32 @@ export function AdminProvider({ children }) {
         body: JSON.stringify(data),
       });
       if (!response.ok) throw new Error('Failed to update order');
-      // Refetch or update state locally
-      setOrders(prev => prev.map(o => o.id === id ? { ...o, ...data, status: o.status } : o)); // Keep original status on full update
+      
+      const updatedOrderData = await response.json();
+      
+      // Format the updated order from backend
+      const formattedUpdatedOrder = {
+        id: updatedOrderData.order_id || id,
+        customerName: updatedOrderData.customer_name || data.customerName,
+        customerPhone: updatedOrderData.phone_number || data.customerPhone,
+        customerAddress: updatedOrderData.address || data.customerAddress,
+        customerNote: updatedOrderData.note || data.customerNote,
+        shippingFee: parseFloat(updatedOrderData.shipping_fee || data.shippingFee || 0),
+        voucherCode: updatedOrderData.voucher_code || data.voucherCode || '',
+        status: updatedOrderData.status || data.status,
+        items: (updatedOrderData.items || data.items || []).map(item => ({
+          productId: item.prod_id || item.productId,
+          quantity: item.quantity,
+          price: parseFloat(item.price)
+        })),
+        subtotal: parseFloat(updatedOrderData.subtotal || data.subtotal || 0),
+        discount: parseFloat(updatedOrderData.discount || data.discount || 0),
+        total: parseFloat(updatedOrderData.total || data.total || 0),
+        createdAt: updatedOrderData.created_at ? new Date(updatedOrderData.created_at) : (data.createdAt || new Date())
+      };
+      
+      // Update state with the formatted order from backend
+      setOrders(prev => prev.map(o => o.id === id ? formattedUpdatedOrder : o));
       
       // Refetch products to update stock
       const productResponse = await fetchWithAuth(`${API_URL}/products`);
@@ -585,6 +611,7 @@ export function AdminProvider({ children }) {
           price: parseFloat(item.price)
         })),
         subtotal: parseFloat(o.subtotal),
+        discount: parseFloat(o.discount || 0),
         total: parseFloat(o.total),
         createdAt: new Date(o.created_at)
       }));

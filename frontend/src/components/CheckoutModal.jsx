@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { vouchers, formatPrice } from '../data';
+import { formatPrice } from '../data';
+import { publicAPI } from '../utils/api';
+import { Tag, ChevronDown, ChevronUp } from 'lucide-react';
 import styles from './CheckoutModal.module.css';
 
 const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
@@ -15,6 +17,8 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
     const [appliedVoucher, setAppliedVoucher] = useState(null);
     const [voucherMessage, setVoucherMessage] = useState('');
     const [voucherError, setVoucherError] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showVoucherForm, setShowVoucherForm] = useState(false);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -25,12 +29,12 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
         if (!appliedVoucher) return 0;
         const subtotal = getCartTotal();
         if (appliedVoucher.type === 'percentage') {
-            return Math.floor((subtotal * appliedVoucher.discount) / 100);
+            return Math.floor((subtotal * appliedVoucher.value) / 100);
         }
-        return appliedVoucher.discount;
+        return appliedVoucher.value;
     };
 
-    const applyVoucher = () => {
+    const applyVoucher = async () => {
         const code = voucherCode.trim().toUpperCase();
         if (!code) {
             setVoucherMessage('Vui lòng nhập mã voucher');
@@ -38,24 +42,25 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
             return;
         }
 
-        const voucher = vouchers.find(v => v.code === code);
-        if (!voucher) {
-            setVoucherMessage('Mã voucher không hợp lệ');
-            setVoucherError(true);
-            return;
-        }
+        try {
+            const voucher = await publicAPI.validateVoucher(code);
+            
+            const subtotal = getCartTotal();
+            if (voucher.minPurchase && subtotal < voucher.minPurchase) {
+                setVoucherMessage(`Đơn hàng tối thiểu ${formatPrice(voucher.minPurchase)} để sử dụng mã này`);
+                setVoucherError(true);
+                return;
+            }
 
-        const subtotal = getCartTotal();
-        if (subtotal < voucher.minOrder) {
-            setVoucherMessage(`Đơn hàng tối thiểu ${formatPrice(voucher.minOrder)} để sử dụng mã này`);
+            setAppliedVoucher(voucher);
+            setVoucherMessage('');
+            setVoucherError(false);
+            showNotification('Áp dụng mã giảm giá thành công!');
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || error.message || 'Mã voucher không hợp lệ';
+            setVoucherMessage(errorMessage);
             setVoucherError(true);
-            return;
         }
-
-        setAppliedVoucher(voucher);
-        setVoucherMessage('');
-        setVoucherError(false);
-        showNotification('Áp dụng mã giảm giá thành công!');
     };
 
     const removeVoucher = () => {
@@ -63,43 +68,56 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
         setVoucherCode('');
         setVoucherMessage('');
         setVoucherError(false);
+        setShowVoucherForm(false);
         showNotification('Đã hủy mã giảm giá');
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         
-        const subtotal = getCartTotal();
-        const discount = calculateDiscount();
-        const total = subtotal - discount;
+        if (isSubmitting) return;
+        setIsSubmitting(true);
 
-        const orderData = {
-            ...formData,
-            items: cart,
-            subtotal,
-            discount,
-            voucher: appliedVoucher ? {
-                code: appliedVoucher.code,
-                description: appliedVoucher.description,
-                discount
-            } : null,
-            total,
-            orderDate: new Date().toLocaleString('vi-VN'),
-            paymentMethod: 'COD'
-        };
+        try {
+            const subtotal = getCartTotal();
+            const discount = calculateDiscount();
+            const total = subtotal - discount;
 
-        // Save order to localStorage
-        const orders = JSON.parse(localStorage.getItem('orders')) || [];
-        orders.push(orderData);
-        localStorage.setItem('orders', JSON.stringify(orders));
+            // Prepare order data for backend API
+            const orderData = {
+                customerName: formData.fullName,
+                customerPhone: formData.phone,
+                customerAddress: formData.address,
+                note: formData.note,
+                items: cart.map(item => ({
+                    productId: item.id,
+                    quantity: item.quantity,
+                    price: item.price
+                })),
+                voucherCode: appliedVoucher ? appliedVoucher.code : null,
+                shippingFee: 0, // You can add shipping fee calculation if needed
+                subtotal,
+                discount,
+                total
+            };
 
-        // Clear cart and close modal
-        clearCart();
-        setFormData({ fullName: '', phone: '', address: '', note: '' });
-        setVoucherCode('');
-        setAppliedVoucher(null);
-        onClose();
-        onSuccess();
+            // Call public API to create order
+            const result = await publicAPI.createOrder(orderData);
+
+            // Clear cart and close modal
+            clearCart();
+            setFormData({ fullName: '', phone: '', address: '', note: '' });
+            setVoucherCode('');
+            setAppliedVoucher(null);
+            onClose();
+            onSuccess(result);
+        } catch (error) {
+            console.error('Lỗi khi tạo đơn hàng:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.';
+            showNotification(errorMessage);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleClose = () => {
@@ -107,6 +125,7 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
         setAppliedVoucher(null);
         setVoucherMessage('');
         setVoucherError(false);
+        setShowVoucherForm(false);
         onClose();
     };
 
@@ -185,36 +204,50 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
                                 ))}
 
                                 <div className={styles.voucherSection}>
-                                    <label htmlFor="voucherCode">Mã giảm giá</label>
-                                    <div className={styles.voucherInputGroup}>
-                                        <input
-                                            type="text"
-                                            id="voucherCode"
-                                            value={voucherCode}
-                                            onChange={(e) => setVoucherCode(e.target.value)}
-                                            placeholder="Nhập mã voucher"
-                                            disabled={!!appliedVoucher}
-                                            autoComplete="off"
-                                        />
-                                        <button
-                                            type="button"
-                                            className={styles.btnApplyVoucher}
-                                            onClick={applyVoucher}
-                                            disabled={!!appliedVoucher}
-                                        >
-                                            Áp dụng
-                                        </button>
-                                    </div>
-                                    {voucherMessage && (
-                                        <div className={`${styles.voucherMessage} ${voucherError ? styles.error : styles.success}`}>
-                                            {voucherMessage}
-                                        </div>
-                                    )}
-                                    {appliedVoucher && (
+                                    {!appliedVoucher ? (
+                                        <>
+                                            <button
+                                                type="button"
+                                                className={styles.btnToggleVoucher}
+                                                onClick={() => setShowVoucherForm(!showVoucherForm)}
+                                            >
+                                                <Tag size={18} />
+                                                <span>Sử dụng mã giảm giá</span>
+                                                {showVoucherForm ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                                            </button>
+                                            
+                                            {showVoucherForm && (
+                                                <div className={styles.voucherFormWrapper}>
+                                                    <div className={styles.voucherInputGroup}>
+                                                        <input
+                                                            type="text"
+                                                            id="voucherCode"
+                                                            value={voucherCode}
+                                                            onChange={(e) => setVoucherCode(e.target.value)}
+                                                            placeholder="Nhập mã voucher"
+                                                            autoComplete="off"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className={styles.btnApplyVoucher}
+                                                            onClick={applyVoucher}
+                                                        >
+                                                            Áp dụng
+                                                        </button>
+                                                    </div>
+                                                    {voucherMessage && (
+                                                        <div className={`${styles.voucherMessage} ${voucherError ? styles.error : styles.success}`}>
+                                                            {voucherMessage}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
                                         <div className={styles.voucherApplied}>
                                             <div className={styles.voucherInfo}>
-                                                <i className="fas fa-tag"></i>
-                                                <span>{appliedVoucher.code} - {appliedVoucher.description}</span>
+                                                <Tag size={20} />
+                                                <span>{appliedVoucher.code} - {appliedVoucher.voucherName}</span>
                                             </div>
                                             <button
                                                 type="button"
@@ -248,8 +281,8 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
                                 </div>
                             </div>
 
-                            <button type="submit" className={styles.btnSubmit}>
-                                <i className="fas fa-check"></i> Xác Nhận Đặt Hàng
+                            <button type="submit" className={styles.btnSubmit} disabled={isSubmitting}>
+                                <i className="fas fa-check"></i> {isSubmitting ? 'Đang xử lý...' : 'Xác Nhận Đặt Hàng'}
                             </button>
                         </form>
                     </div>

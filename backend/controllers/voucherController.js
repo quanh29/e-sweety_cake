@@ -1,6 +1,10 @@
 import pool from '../config/mysql.js';
 import { v4 as uuidv4 } from 'uuid';
 
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+};
+
 // Get all vouchers
 export const getAllVouchers = async (req, res) => {
     try {
@@ -263,12 +267,11 @@ export const validateVoucher = async (req, res) => {
         }
 
         res.json({
-            valid: true,
-            voucher: {
-                code: voucher.code,
-                type: voucher.is_absolute ? 'fixed' : 'percentage',
-                value: parseFloat(voucher.value)
-            }
+            code: voucher.code,
+            type: voucher.is_absolute ? 'fixed' : 'percentage',
+            value: parseFloat(voucher.value),
+            minPurchase: 0,
+            voucherName: `Giảm ${voucher.is_absolute ? formatCurrency(voucher.value) : voucher.value + '%'}`
         });
     } catch (error) {
         console.error('Validate voucher error:', error);

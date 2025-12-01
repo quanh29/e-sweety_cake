@@ -18,6 +18,30 @@ const VouchersPage = () => {
     return matchSearch && matchType;
   });
 
+  const getVoucherStatus = (voucher) => {    
+    // Check if voucher is expired
+    if (voucher.endDate) {
+      const endDate = new Date(voucher.endDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (endDate < today) {
+        return { text: 'Hết hạn', color: '#721c24', bgColor: '#f8d7da', canToggle: false };
+      }
+    }
+    
+    // Check if voucher has no remaining quantity
+    if (voucher.quantity - (voucher.used || 0) <= 0) {
+      return { text: 'Hết lượt dùng', color: '#721c24', bgColor: '#f8d7da', canToggle: false };
+    }
+    
+    // Check if voucher is active
+    if (voucher.isActive) {
+      return { text: 'Đang hoạt động', color: '#155724', bgColor: '#d4edda', canToggle: true };
+    } else {
+      return { text: 'Vô hiệu hóa', color: '#721c24', bgColor: '#f8d7da', canToggle: true };
+    }
+  };
+
   const handleOpenModal = () => {
     setIsModalOpen(true);
   };
@@ -122,38 +146,43 @@ const VouchersPage = () => {
                 </td>
               </tr>
             ) : (
-              filteredVouchers.map((voucher) => (
-                <tr key={voucher.id}>
-                  <td><strong>{voucher.code}</strong></td>
-                  <td>{voucher.type === 'percentage' ? 'Phần trăm' : 'Số tiền cố định'}</td>
-                  <td>{voucher.type === 'percentage' ? `${voucher.value}%` : `${voucher.value.toLocaleString()}đ`}</td>
-                  <td>{voucher.quantity}</td>
-                  <td>{voucher.used || 0}</td>
-                  <td>{voucher.endDate ? formatDate(voucher.endDate) : 'Không giới hạn'}</td>
-                  <td>
-                    <span style={{ 
-                      padding: '4px 8px', 
-                      borderRadius: '4px', 
-                      fontSize: '0.85em',
-                      backgroundColor: voucher.isActive ? '#d4edda' : '#f8d7da',
-                      color: voucher.isActive ? '#155724' : '#721c24'
-                    }}>
-                      {voucher.isActive ? 'Đang hoạt động' : 'Vô hiệu hóa'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className={styles.actionButtons}>
-                      <Button 
-                        size="sm" 
-                        variant={voucher.isActive ? 'danger' : 'success'} 
-                        onClick={() => handleToggleStatus(voucher.code)}
-                      >
-                        {voucher.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'}
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              filteredVouchers.map((voucher) => {
+                const status = getVoucherStatus(voucher);
+                return (
+                  <tr key={voucher.id}>
+                    <td><strong>{voucher.code}</strong></td>
+                    <td>{voucher.type === 'percentage' ? 'Phần trăm' : 'Số tiền cố định'}</td>
+                    <td>{voucher.type === 'percentage' ? `${voucher.value}%` : `${voucher.value.toLocaleString()}đ`}</td>
+                    <td>{voucher.quantity}</td>
+                    <td>{voucher.used || 0}</td>
+                    <td>{voucher.endDate ? formatDate(voucher.endDate) : 'Không giới hạn'}</td>
+                    <td>
+                      <span style={{ 
+                        padding: '4px 8px', 
+                        borderRadius: '4px', 
+                        fontSize: '0.85em',
+                        backgroundColor: status.bgColor,
+                        color: status.color
+                      }}>
+                        {status.text}
+                      </span>
+                    </td>
+                    <td>
+                      <div className={styles.actionButtons}>
+                        {status.canToggle && (
+                          <Button 
+                            size="sm" 
+                            variant={voucher.isActive ? 'danger' : 'success'} 
+                            onClick={() => handleToggleStatus(voucher.code)}
+                          >
+                            {voucher.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'}
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

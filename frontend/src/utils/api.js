@@ -1,88 +1,134 @@
+import axios from 'axios';
+
 const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 const API_URL = `${SERVER_URL}/api`;
+
+// Axios instance for authenticated API calls
+const axiosInstance = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
+  headers: { 'Content-Type': 'application/json' }
+});
+
+// Axios instance for public API calls (no auth)
+const publicAxios = axios.create({
+  baseURL: API_URL,
+  headers: { 'Content-Type': 'application/json' }
+});
 
 let isRefreshing = false;
 let failedQueue = [];
 
 const processQueue = (error, token = null) => {
   failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
+    if (error) prom.reject(error);
+    else prom.resolve(token);
   });
   failedQueue = [];
 };
 
 const refreshToken = async () => {
   try {
-    const response = await fetch(`${API_URL}/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include', // Important to send the httpOnly cookie
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to refresh token');
-    }
-
-    const data = await response.json();
+    const response = await axios.post(`${API_URL}/auth/refresh`, null, { withCredentials: true });
+    const data = response.data;
     sessionStorage.setItem('accessToken', data.accessToken);
     return data.accessToken;
   } catch (error) {
     sessionStorage.removeItem('accessToken');
-    window.location.href = '/admin'; // Redirect to login
-    return Promise.reject(error);
+    window.location.href = '/admin';
+    throw error;
   }
 };
 
-export const fetchWithAuth = async (url, options = {}) => {
-  let token = sessionStorage.getItem('accessToken');
+// Add Authorization header to each request if token exists
+axiosInstance.interceptors.request.use(
+  config => {
+    const token = sessionStorage.getItem('accessToken');
+    if (token) config.headers['Authorization'] = `Bearer ${token}`;
+    return config;
+  },
+  err => Promise.reject(err)
+);
 
-  const headers = options.body instanceof FormData 
-    ? {} 
-    : { 'Content-Type': 'application/json' };
+// Response interceptor to handle 401/403 and refresh token
+axiosInstance.interceptors.response.use(
+  res => res,
+  err => {
+    const originalRequest = err.config;
+    const status = err.response ? err.response.status : null;
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  options.headers = { ...headers, ...options.headers };
-  options.credentials = 'include';
-
-  try {
-    const response = await fetch(url, options);
-
-    if (response.status === 401 || response.status === 403) {
+    if ((status === 401 || status === 403) && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-        .then(newToken => {
-          options.headers['Authorization'] = `Bearer ${newToken}`;
-          return fetch(url, options);
-        });
+          .then(token => {
+            originalRequest.headers['Authorization'] = `Bearer ${token}`;
+            return axiosInstance(originalRequest);
+          })
+          .catch(e => Promise.reject(e));
       }
 
+      originalRequest._retry = true;
       isRefreshing = true;
 
-      return refreshToken()
-        .then(newToken => {
-          options.headers['Authorization'] = `Bearer ${newToken}`;
-          processQueue(null, newToken);
-          return fetch(url, options);
-        })
-        .catch(err => {
-          processQueue(err, null);
-          return Promise.reject(err);
-        })
-        .finally(() => {
-          isRefreshing = false;
-        });
+      return new Promise((resolve, reject) => {
+        refreshToken()
+          .then(newToken => {
+            originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+            processQueue(null, newToken);
+            resolve(axiosInstance(originalRequest));
+          })
+          .catch(e => {
+            processQueue(e, null);
+            reject(e);
+          })
+          .finally(() => {
+            isRefreshing = false;
+          });
+      });
     }
-    
-    return response;
+
+    return Promise.reject(err);
+  }
+);
+
+// Keep a fetch-like wrapper for backward compatibility
+export const fetchWithAuth = async (url, options = {}) => {
+  try {
+    const method = options.method || 'GET';
+    const headers = options.headers || {};
+    const body = options.body !== undefined ? options.body : undefined;
+
+    const axiosConfig = {
+      url,
+      method,
+      headers: { ...headers },
+      data: body,
+      withCredentials: true
+    };
+
+    if (body instanceof FormData) {
+      delete axiosConfig.headers['Content-Type'];
+    }
+
+    const response = await axiosInstance.request(axiosConfig);
+
+    return {
+      ok: response.status >= 200 && response.status < 300,
+      status: response.status,
+      json: async () => response.data,
+      text: async () => (typeof response.data === 'string' ? response.data : JSON.stringify(response.data))
+    };
   } catch (error) {
+    if (error.response) {
+      return {
+        ok: false,
+        status: error.response.status,
+        json: async () => error.response.data,
+        text: async () => JSON.stringify(error.response.data)
+      };
+    }
     return Promise.reject(error);
   }
 };
@@ -90,108 +136,61 @@ export const fetchWithAuth = async (url, options = {}) => {
 // Voucher API endpoints
 export const voucherAPI = {
   getAll: async () => {
-    const response = await fetchWithAuth(`${API_URL}/vouchers`);
-    if (!response.ok) throw new Error('Failed to fetch vouchers');
-    return response.json();
+    const response = await axiosInstance.get('/vouchers');
+    return response.data;
   },
 
   getByCode: async (code) => {
-    const response = await fetchWithAuth(`${API_URL}/vouchers/${code}`);
-    if (!response.ok) throw new Error('Failed to fetch voucher');
-    return response.json();
+    const response = await axiosInstance.get(`/vouchers/${code}`);
+    return response.data;
   },
 
   create: async (voucherData) => {
-    const response = await fetchWithAuth(`${API_URL}/vouchers`, {
-      method: 'POST',
-      body: JSON.stringify(voucherData),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create voucher');
-    }
-    return response.json();
+    const response = await axiosInstance.post('/vouchers', voucherData);
+    return response.data;
   },
 
   toggleStatus: async (code) => {
-    const response = await fetchWithAuth(`${API_URL}/vouchers/${code}/toggle`, {
-      method: 'PATCH',
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to toggle voucher status');
-    }
-    return response.json();
+    const response = await axiosInstance.patch(`/vouchers/${code}/toggle`);
+    return response.data;
   },
 
   validate: async (code) => {
-    const response = await fetch(`${API_URL}/vouchers/validate/${code}`);
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Invalid voucher');
-    }
-    return response.json();
+    const response = await publicAxios.get(`/vouchers/validate/${code}`);
+    return response.data;
   }
 };
 
 // User API endpoints
 export const userAPI = {
   getAll: async () => {
-    const response = await fetchWithAuth(`${API_URL}/users`);
-    if (!response.ok) throw new Error('Failed to fetch users');
-    return response.json();
+    const response = await axiosInstance.get('/users');
+    return response.data;
   },
 
   getById: async (id) => {
-    const response = await fetchWithAuth(`${API_URL}/users/${id}`);
-    if (!response.ok) throw new Error('Failed to fetch user');
-    return response.json();
+    const response = await axiosInstance.get(`/users/${id}`);
+    return response.data;
   },
 
   create: async (userData) => {
-    const response = await fetchWithAuth(`${API_URL}/users`, {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create user');
-    }
-    return response.json();
+    const response = await axiosInstance.post('/users', userData);
+    return response.data;
   },
 
   update: async (id, userData) => {
-    const response = await fetchWithAuth(`${API_URL}/users/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(userData),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to update user');
-    }
-    return response.json();
+    const response = await axiosInstance.put(`/users/${id}`, userData);
+    return response.data;
   },
 
   delete: async (id) => {
-    const response = await fetchWithAuth(`${API_URL}/users/${id}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to delete user');
-    }
-    return response.json();
+    const response = await axiosInstance.delete(`/users/${id}`);
+    return response.data;
   },
 
   toggleStatus: async (id) => {
-    const response = await fetchWithAuth(`${API_URL}/users/${id}/toggle-status`, {
-      method: 'PATCH',
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to toggle user status');
-    }
-    return response.json();
+    const response = await axiosInstance.patch(`/users/${id}/toggle-status`);
+    return response.data;
   }
 };
 
@@ -199,91 +198,86 @@ export const userAPI = {
 export const publicAPI = {
   // Get all products
   getProducts: async () => {
-    const response = await fetch(`${API_URL}/products/public/products`);
-    if (!response.ok) throw new Error('Failed to fetch products');
-    return response.json();
+    const response = await publicAxios.get('/products/public/products');
+    return response.data;
   },
 
   // Get single product by ID
   getProduct: async (id) => {
-    const response = await fetch(`${API_URL}/products/public/products/${id}`);
-    if (!response.ok) throw new Error('Failed to fetch product');
-    return response.json();
+    const response = await publicAxios.get(`/products/public/products/${id}`);
+    return response.data;
   },
 
   // Create order (public - no authentication)
   createOrder: async (orderData) => {
-    const response = await fetch(`${API_URL}/orders/public/orders`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(orderData),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create order');
-    }
-    return response.json();
+    const response = await publicAxios.post('/orders/public/orders', orderData);
+    return response.data;
   },
 
   // Validate voucher code
   validateVoucher: async (code) => {
-    const response = await fetch(`${API_URL}/vouchers/validate/${code}`);
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Invalid voucher');
-    }
-    return response.json();
+    const response = await publicAxios.get(`/vouchers/validate/${code}`);
+    return response.data;
+  }
+};
+
+// Order API endpoints (authenticated - for admin)
+export const orderAPI = {
+  getAll: async () => {
+    const response = await axiosInstance.get('/orders');
+    return response.data;
+  },
+
+  getById: async (id) => {
+    const response = await axiosInstance.get(`/orders/${id}`);
+    return response.data;
+  },
+
+  create: async (orderData) => {
+    const response = await axiosInstance.post('/orders', orderData);
+    return response.data;
+  },
+
+  update: async (id, orderData) => {
+    const response = await axiosInstance.put(`/orders/${id}`, orderData);
+    return response.data;
+  },
+
+  updateStatus: async (id, status) => {
+    const response = await axiosInstance.patch(`/orders/${id}/status`, { status });
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await axiosInstance.delete(`/orders/${id}`);
+    return response.data;
   }
 };
 
 // Import API endpoints
 export const importAPI = {
   getAll: async () => {
-    const response = await fetchWithAuth(`${API_URL}/imports`);
-    if (!response.ok) throw new Error('Failed to fetch imports');
-    return response.json();
+    const response = await axiosInstance.get('/imports');
+    return response.data;
   },
 
   getById: async (id) => {
-    const response = await fetchWithAuth(`${API_URL}/imports/${id}`);
-    if (!response.ok) throw new Error('Failed to fetch import');
-    return response.json();
+    const response = await axiosInstance.get(`/imports/${id}`);
+    return response.data;
   },
 
   create: async (importData) => {
-    const response = await fetchWithAuth(`${API_URL}/imports`, {
-      method: 'POST',
-      body: JSON.stringify(importData),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create import');
-    }
-    return response.json();
+    const response = await axiosInstance.post('/imports', importData);
+    return response.data;
   },
 
   update: async (id, importData) => {
-    const response = await fetchWithAuth(`${API_URL}/imports/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(importData),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to update import');
-    }
-    return response.json();
+    const response = await axiosInstance.put(`/imports/${id}`, importData);
+    return response.data;
   },
 
   delete: async (id) => {
-    const response = await fetchWithAuth(`${API_URL}/imports/${id}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to delete import');
-    }
-    return response.json();
+    const response = await axiosInstance.delete(`/imports/${id}`);
+    return response.data;
   }
 };

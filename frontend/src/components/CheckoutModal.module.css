@@ -127,6 +127,52 @@
     border-bottom: 1px solid #e0e0e0;
 }
 
+.btnToggleVoucher {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 15px;
+    background: #fff;
+    border: 2px solid #d4806a;
+    border-radius: 8px;
+    color: #d4806a;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btnToggleVoucher:hover {
+    background: #fff5f2;
+    border-color: #c36b54;
+}
+
+.btnToggleVoucher span {
+    flex: 1;
+    text-align: left;
+}
+
+.voucherFormWrapper {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .voucherSection label {
     display: block;
     margin-bottom: 10px;
@@ -203,7 +249,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 10px;
     padding: 12px 15px;
     background: #e8f5e9;
     border: 2px solid #4ecca3;

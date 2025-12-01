@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useAdmin } from '../context/AdminContext';
 import Modal from './Modal';
 import Button from './Button';
+import { Package, Cake, Download, Tag, Users, Settings, LogOut, User } from 'lucide-react';
 import styles from './AdminLayout.module.css';
 import modalStyles from './Modal.module.css';
 
@@ -139,7 +140,7 @@ const AdminLayout = () => {
     <div className={styles.container}>
       <div className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
-          <h1>🧁 E-Sweetie</h1>
+          <h1><Cake size={28} /> E-Sweetie</h1>
           <p>Quản lý cửa hàng bánh ngọt</p>
         </div>
         <div className={styles.sidebarMenu}>
@@ -149,7 +150,7 @@ const AdminLayout = () => {
               `${styles.menuItem} ${isActive ? styles.active : ''}`
             }
           >
-            <span className={styles.menuIcon}>📦</span>
+            <Package className={styles.menuIcon} size={20} />
             <span>Đơn hàng</span>
           </NavLink>
           <NavLink
@@ -158,7 +159,7 @@ const AdminLayout = () => {
               `${styles.menuItem} ${isActive ? styles.active : ''}`
             }
           >
-            <span className={styles.menuIcon}>🧁</span>
+            <Cake className={styles.menuIcon} size={20} />
             <span>Sản phẩm</span>
           </NavLink>
           <NavLink
@@ -167,7 +168,7 @@ const AdminLayout = () => {
               `${styles.menuItem} ${isActive ? styles.active : ''}`
             }
           >
-            <span className={styles.menuIcon}>📥</span>
+            <Download className={styles.menuIcon} size={20} />
             <span>Nhập hàng</span>
           </NavLink>
           <NavLink
@@ -176,7 +177,7 @@ const AdminLayout = () => {
               `${styles.menuItem} ${isActive ? styles.active : ''}`
             }
           >
-            <span className={styles.menuIcon}>🎫</span>
+            <Tag className={styles.menuIcon} size={20} />
             <span>Voucher</span>
           </NavLink>
           <NavLink
@@ -185,24 +186,24 @@ const AdminLayout = () => {
               `${styles.menuItem} ${isActive ? styles.active : ''}`
             }
           >
-            <span className={styles.menuIcon}>👥</span>
+            <Users className={styles.menuIcon} size={20} />
             <span>Người dùng</span>
           </NavLink>
         </div>
         
         <div className={styles.userSection}>
           <div className={styles.userInfo}>
-            <div className={styles.userAvatar}>👤</div>
+            <div className={styles.userAvatar}><User size={20} /></div>
             <div className={styles.userDetails}>
               <div className={styles.userName}>{currentUser?.fullName || 'Admin'}</div>
               <div className={styles.userRole}>{currentUser?.isAdmin ? 'Admin' : 'User'}</div>
             </div>
             <button className={styles.settingsBtn} onClick={handleOpenSettings} title="Cài đặt">
-              ⚙️
+              <Settings size={16} />
             </button>
           </div>
           <button className={styles.logoutBtn} onClick={handleLogout}>
-            <span className={styles.logoutIcon}>🚪</span>
+            <LogOut className={styles.logoutIcon} size={16} />
             <span>Đăng xuất</span>
           </button>
         </div>

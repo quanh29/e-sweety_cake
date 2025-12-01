@@ -6,7 +6,7 @@
 
 .sidebar {
   width: 260px;
-  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  background: #3f1a00;
   color: white;
   position: fixed;
   height: 100vh;
@@ -67,9 +67,11 @@
 }
 
 .menuIcon {
-  font-size: 20px;
-  width: 24px;
-  text-align: center;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* User Section at Bottom */

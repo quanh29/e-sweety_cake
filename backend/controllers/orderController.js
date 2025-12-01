@@ -235,7 +235,7 @@ export const updateOrder = async (req, res) => {
         }
 
         // 1. Update the main order table
-        const finalVoucherCode = voucherCode || 'NONE';
+        const finalVoucherCode = voucherCode || null;
 
         await connection.query(
             `UPDATE orders SET 
