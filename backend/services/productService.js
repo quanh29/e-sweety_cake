@@ -1,44 +1,75 @@
-import pool from '../config/mysql.js';
-import { v4 as uuidv4 } from 'uuid';
+import Product from '../models/Product.js';
 
 export const getAllProducts = async () => {
-    const [rows] = await pool.query('SELECT * FROM products');
-    return rows;
+    const products = await Product.find().sort({ createdAt: -1 }).lean();
+    return products.map(p => ({
+        prod_id: p._id.toString(),
+        prod_name: p.name,
+        prod_description: p.description,
+        price: p.price,
+        stock: p.stock,
+        picture_url: p.pictureUrl
+    }));
 };
 
 export const getProductById = async (id) => {
-    const [rows] = await pool.query('SELECT * FROM products WHERE prod_id = ?', [id]);
-    return rows[0];
+    const product = await Product.findById(id).lean();
+    if (!product) return null;
+    
+    return {
+        prod_id: product._id.toString(),
+        prod_name: product.name,
+        prod_description: product.description,
+        price: product.price,
+        stock: product.stock,
+        picture_url: product.pictureUrl
+    };
 };
 
 export const createProduct = async (product) => {
     const { name, description, price, stock, imageUrl } = product;
-    const prod_id = uuidv4();
-    const [result] = await pool.query(
-        'INSERT INTO products (prod_id, prod_name, prod_description, price, stock, picture_url) VALUES (?, ?, ?, ?, ?, ?)',
-        [prod_id, name, description, price, stock, imageUrl]
-    );
-    return { prod_id, ...product };
+    const newProduct = await Product.create({
+        name,
+        description,
+        price,
+        stock,
+        pictureUrl: imageUrl
+    });
+    
+    return {
+        prod_id: newProduct._id.toString(),
+        name: newProduct.name,
+        description: newProduct.description,
+        price: newProduct.price,
+        stock: newProduct.stock,
+        imageUrl: newProduct.pictureUrl
+    };
 };
 
 export const updateProduct = async (id, product) => {
     const { name, description, price, stock, imageUrl } = product;
-    let query = 'UPDATE products SET prod_name = ?, prod_description = ?, price = ?, stock = ?';
-    const params = [name, description, price, stock];
-
+    
+    const updateData = {
+        name,
+        description,
+        price,
+        stock
+    };
+    
     if (imageUrl) {
-        query += ', picture_url = ?';
-        params.push(imageUrl);
+        updateData.pictureUrl = imageUrl;
     }
-
-    query += ' WHERE prod_id = ?';
-    params.push(id);
-
-    const [result] = await pool.query(query, params);
-    return result.affectedRows > 0;
+    
+    const updatedProduct = await Product.findByIdAndUpdate(
+        id,
+        updateData,
+        { new: true }
+    );
+    
+    return updatedProduct !== null;
 };
 
 export const deleteProduct = async (id) => {
-    const [result] = await pool.query('DELETE FROM products WHERE prod_id = ?', [id]);
-    return result.affectedRows > 0;
+    const result = await Product.findByIdAndDelete(id);
+    return result !== null;
 };

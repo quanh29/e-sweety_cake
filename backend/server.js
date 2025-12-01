@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import cookieParser from 'cookie-parser';
+import connectDB from './config/mongodb.js';
 import { authenticateJWT, authorizeRoles } from './middleware/auth.js';
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
@@ -12,6 +13,9 @@ import importRoutes from './routes/importRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Connect to MongoDB
+connectDB();
 
 //Middleware
 app.use('/uploads', express.static('uploads'));

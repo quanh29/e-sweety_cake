@@ -1,5 +1,5 @@
 import User from '../models/User.js';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 
 // Get all users
 export const getAllUsers = async (req, res) => {
@@ -47,7 +47,6 @@ export const getUserById = async (req, res) => {
         res.status(500).json({ message: 'Lỗi khi lấy thông tin người dùng' });
     }
 };
-
 
 // Create new user
 export const createUser = async (req, res) => {
@@ -103,34 +102,6 @@ export const updateUser = async (req, res) => {
         const user = await User.findById(id);
         if (!user) {
             return res.status(404).json({ message: 'Người dùng không tồn tại' });
-        }
-
-        // Prepare update query
-        let updateQuery = 'UPDATE users SET ';
-        const updateParams = [];
-
-        if (fullname !== undefined && fullname !== null) {
-            updateQuery += 'full_name = ?, ';
-            updateParams.push(fullname);
-        }
-
-        if (password) {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-            updateQuery += 'hashed_password = ?, salt = ?, ';
-            updateParams.push(hashedPassword, salt);
-        }
-
-        if (role !== undefined && role !== null) {
-            const isAdmin = role === 'admin';
-            updateQuery += 'is_admin = ?, ';
-            updateParams.push(isAdmin);
-        }
-
-        if (status !== undefined && status !== null) {
-            const isActive = status === 'active';
-            updateQuery += 'is_actived = ?, ';
-            updateParams.push(isActive);
         }
 
         // Prepare update data
@@ -212,7 +183,6 @@ export const toggleUserStatus = async (req, res) => {
         const { id } = req.params;
 
         const user = await User.findById(id);
-
         if (!user) {
             return res.status(404).json({ message: 'Người dùng không tồn tại' });
         }

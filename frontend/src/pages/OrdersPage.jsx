@@ -32,6 +32,27 @@ const OrdersPage = () => {
     return matchSearch && matchStatus;
   });
 
+  // Calculate actual total with voucher discount
+  const calculateOrderTotal = (order) => {
+    const subtotal = order.subtotal || 0;
+    const shippingFee = order.shippingFee || 0;
+    
+    let discount = 0;
+    if (order.voucherCode) {
+      const voucher = vouchers.find(v => v.code.toLowerCase() === order.voucherCode.toLowerCase());
+      if (voucher) {
+        if (voucher.type === 'percentage') {
+          discount = (subtotal * voucher.value) / 100;
+        } else {
+          discount = voucher.value;
+        }
+      }
+    }
+    
+    const total = subtotal + shippingFee - discount;
+    return total > 0 ? total : 0;
+  };
+
   // Recalculate totals whenever items, voucher, or shipping change
   useEffect(() => {
     const subtotal = orderItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
@@ -262,7 +283,7 @@ const OrdersPage = () => {
                   <td>#{order.id}</td>
                   <td>{order.customerName}</td>
                   <td>{order.customerPhone}</td>
-                  <td>{formatCurrency(order.total)}</td>
+                  <td>{formatCurrency(calculateOrderTotal(order))}</td>
                   <td>{getStatusBadge(order.status)}</td>
                   <td>{formatDate(order.createdAt)}</td>
                   <td>

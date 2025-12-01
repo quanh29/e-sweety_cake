@@ -12,7 +12,7 @@ import { authenticateJWT, authorizeRoles } from '../middleware/auth.js';
 const router = express.Router();
 
 // All routes require authentication and admin role
-router.get('/', authenticateJWT, authorizeRoles('admin'), getAllUsers);
+router.get('/', authenticateJWT, authorizeRoles('user'), getAllUsers);
 router.get('/:id', authenticateJWT, authorizeRoles('admin'), getUserById);
 router.post('/', authenticateJWT, authorizeRoles('admin'), createUser);
 router.put('/:id', authenticateJWT, authorizeRoles('admin'), updateUser);

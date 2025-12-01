@@ -1,27 +1,45 @@
 import bcrypt from 'bcryptjs';
-import pool from '../config/mysql.js';
 import crypto from 'crypto';
+import User from '../models/User.js';
+import RefreshToken from '../models/RefreshToken.js';
 
 // Helper: create uuid-like id (use library in production)
 export const makeId = () => crypto.randomUUID();
 
 export const findUserByUsername = async (username) => {
-    const [rows] = await pool.execute('SELECT * FROM users WHERE username = ?', [username]);
-    return rows[0];
+    const user = await User.findOne({ username: username.toLowerCase() }).lean();
+    if (!user) return null;
+    
+    // Convert to MySQL-like format for backward compatibility
+    return {
+        user_id: user._id.toString(),
+        full_name: user.fullName,
+        username: user.username,
+        hashed_password: user.hashedPassword,
+        salt: user.salt,
+        is_actived: user.isActive,
+        is_admin: user.isAdmin
+    };
 };
 
 export const createUser = async ({ full_name, username, password }) => {
-    const user_id = makeId();
     const salt = bcrypt.genSaltSync(10);
     const hashed_password = bcrypt.hashSync(password, salt);
 
-    await pool.execute(
-        `INSERT INTO users (user_id, full_name, username, hashed_password, salt, is_actived, is_admin)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [user_id, full_name, username, hashed_password, salt, true, false]
-    );
+    const user = await User.create({
+        fullName: full_name,
+        username: username.toLowerCase(),
+        hashedPassword: hashed_password,
+        salt,
+        isActive: true,
+        isAdmin: false
+    });
 
-    return { user_id, full_name, username };
+    return { 
+        user_id: user._id.toString(), 
+        full_name: user.fullName, 
+        username: user.username 
+    };
 };
 
 export const validatePassword = (password, hashedPassword) => {
@@ -32,20 +50,39 @@ export const validatePassword = (password, hashedPassword) => {
 export const storeRefreshToken = async ({ user_id, token, expiresAt, deviceInfo }) => {
     // We'll store a hash of the token for safety
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    await pool.execute(
-        `INSERT INTO refresh_tokens (user_id, token_hash, expires_at, device_info) VALUES (?, ?, ?, ?)`,
-        [user_id, tokenHash, expiresAt, deviceInfo || null]
-    );
+    
+    // Delete all existing tokens for this user to ensure only 1 active token
+    await RefreshToken.deleteMany({ userId: user_id });
+    
+    await RefreshToken.create({
+        userId: user_id,
+        tokenHash,
+        expiresAt,
+        deviceInfo: deviceInfo || null,
+        revoked: false
+    });
 };
 
 export const findRefreshToken = async (token) => {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     
-    const [rows] = await pool.execute('SELECT * FROM refresh_tokens WHERE token_hash = ? AND revoked = false', [tokenHash]);
-    return rows[0];
+    const refreshToken = await RefreshToken.findOne({ 
+        tokenHash, 
+        revoked: false 
+    }).lean();
+    
+    if (!refreshToken) return null;
+    
+    return {
+        token_id: refreshToken._id.toString(),
+        user_id: refreshToken.userId.toString(),
+        expires_at: refreshToken.expiresAt,
+        expiresAt: refreshToken.expiresAt
+    };
 };
 
 export const revokeRefreshToken = async (token) => {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    await pool.execute('UPDATE refresh_tokens SET revoked = true WHERE token_hash = ?', [tokenHash]);
+    // Delete the token instead of marking as revoked to avoid accumulation
+    await RefreshToken.deleteOne({ tokenHash });
 };

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import 'dotenv/config';
-import pool from '../config/mysql.js';
+import User from '../models/User.js';
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'access-secret';
 
@@ -16,8 +16,8 @@ export async function authenticateJWT(req, res, next) {
         
         // Check if user is still active
         try {
-            const [rows] = await pool.query('SELECT is_actived FROM users WHERE user_id = ?', [payload.id]);
-            if (rows.length === 0 || !rows[0].is_actived) {
+            const user = await User.findById(payload.id).lean();
+            if (!user || !user.isActive) {
                 return res.status(403).json({ message: 'Tài khoản đã bị vô hiệu hóa' });
             }
         } catch (dbErr) {
@@ -42,13 +42,13 @@ export function authorizeRoles(...allowedRoles) {
         const userId = req.user.id;
 
         try {
-            const [rows] = await pool.query('SELECT is_admin FROM users WHERE user_id = ?', [userId]);
+            const user = await User.findById(userId).lean();
             
-            if (rows.length === 0) {
+            if (!user) {
                 return res.status(403).json({ message: 'Forbidden: User not found' });
             }
 
-            const userIsAdmin = rows[0].is_admin === 1;
+            const userIsAdmin = user.isAdmin === true;
 
             // An 'user' has rights, admin also has all user rights.
             if (allowedRoles.includes('user') || userIsAdmin) {

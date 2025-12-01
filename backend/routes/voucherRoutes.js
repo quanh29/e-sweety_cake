@@ -14,9 +14,9 @@ const router = express.Router();
 router.get('/validate/:code', validateVoucher);
 
 // Protected routes - require authentication and admin role
-router.get('/', authenticateJWT, authorizeRoles('admin'), getAllVouchers);
-router.get('/:code', authenticateJWT, authorizeRoles('admin'), getVoucherByCode);
-router.post('/', authenticateJWT, authorizeRoles('admin'), createVoucher);
-router.patch('/:code/toggle', authenticateJWT, authorizeRoles('admin'), toggleVoucherStatus);
+router.get('/', authenticateJWT, authorizeRoles('user'), getAllVouchers);
+router.get('/:code', authenticateJWT, authorizeRoles('user'), getVoucherByCode);
+router.post('/', authenticateJWT, authorizeRoles('user'), createVoucher);
+router.patch('/:code/toggle', authenticateJWT, authorizeRoles('user'), toggleVoucherStatus);
 
 export default router;

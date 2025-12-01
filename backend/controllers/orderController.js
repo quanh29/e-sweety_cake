@@ -1,25 +1,12 @@
-import pool from '../config/mysql.js';
-import { v4 as uuidv4 } from 'uuid';
-
-const statusToId = {
-    pending: 'PEN',
-    confirmed: 'CON',
-    shipped: 'SHP',
-    completed: 'COM', // Assuming COM for completed based on your previous UI
-    cancelled: 'CAN'
-};
-
-const idToStatus = {
-    PEN: 'pending',
-    CON: 'confirmed',
-    SHP: 'shipped',
-    COM: 'completed',
-    CAN: 'cancelled'
-};
+import Order from '../models/Order.js';
+import Product from '../models/Product.js';
+import mongoose from 'mongoose';
 
 // Public controller for creating orders (no authentication required)
 export const createPublicOrder = async (req, res) => {
-    const connection = await pool.getConnection();
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
         const {
             customerName, customerPhone, customerAddress, note,
@@ -27,63 +14,82 @@ export const createPublicOrder = async (req, res) => {
         } = req.body;
 
         if (!customerName || !customerPhone || !customerAddress || !items || items.length === 0) {
+            await session.abortTransaction();
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
-        const orderId = uuidv4();
-        const statusId = 'PEN'; // Always set to pending for public orders
-        const finalVoucherCode = voucherCode || null;
-
-        await connection.beginTransaction();
-
-        // Create order without created_by since it's a public order
-        await connection.query(
-            `INSERT INTO orders (order_id, customer_name, phone_number, address, note, shipping_fee, voucher_code, status_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [orderId, customerName, customerPhone, customerAddress, note, shippingFee, finalVoucherCode, statusId]
-        );
-
+        // Validate and prepare items with product details
+        const orderItems = [];
         for (const item of items) {
-            await connection.query(
-                `INSERT INTO order_details (order_id, prod_id, quantity, price) VALUES (?, ?, ?, ?)`,
-                [orderId, item.productId, item.quantity, item.price]
-            );
+            const product = await Product.findById(item.productId).session(session);
+            if (!product) {
+                await session.abortTransaction();
+                return res.status(404).json({ message: `Product ${item.productId} not found` });
+            }
             
+            if (product.stock < item.quantity) {
+                await session.abortTransaction();
+                return res.status(400).json({ 
+                    message: `Insufficient stock for ${product.name}. Available: ${product.stock}` 
+                });
+            }
+
             // Reduce product stock
-            await connection.query(
-                'UPDATE products SET stock = stock - ? WHERE prod_id = ?',
-                [item.quantity, item.productId]
-            );
+            product.stock -= item.quantity;
+            await product.save({ session });
+
+            orderItems.push({
+                productId: product._id,
+                productName: product.name,
+                quantity: item.quantity,
+                price: item.price
+            });
         }
 
-        await connection.commit();
+        // Create order
+        const newOrder = await Order.create([{
+            customerName,
+            phoneNumber: customerPhone,
+            address: customerAddress,
+            note: note || '',
+            shippingFee: shippingFee || 0,
+            voucherCode: voucherCode || null,
+            items: orderItems,
+            status: 'pending',
+            createdBy: null // Public order has no creator
+        }], { session });
 
-        // Fetch the newly created order with all details
-        const [orders] = await connection.query(`
-            SELECT 
-                o.order_id, o.customer_name, o.phone_number, o.address, o.shipping_fee, o.voucher_code, o.note, o.created_at, o.status_id,
-                (SELECT SUM(od.price * od.quantity) FROM order_details od WHERE od.order_id = o.order_id) as subtotal
-            FROM orders o
-            WHERE o.order_id = ?
-        `, [orderId]);
+        await session.commitTransaction();
 
-        const [details] = await connection.query('SELECT prod_id, quantity, price FROM order_details WHERE order_id = ?', [orderId]);
-        
-        const newOrder = {
-            ...orders[0],
-            status: idToStatus[orders[0].status_id] || 'pending',
-            items: details,
-            total: parseFloat(orders[0].subtotal || 0) + parseFloat(orders[0].shipping_fee || 0)
-        };
+        // Populate product details for response
+        const populatedOrder = await Order.findById(newOrder[0]._id).populate('items.productId', 'name pictureUrl');
 
-        res.status(201).json(newOrder);
+        res.status(201).json({
+            orderId: populatedOrder._id.toString(),
+            customerName: populatedOrder.customerName,
+            phoneNumber: populatedOrder.phoneNumber,
+            address: populatedOrder.address,
+            note: populatedOrder.note,
+            shippingFee: populatedOrder.shippingFee,
+            voucherCode: populatedOrder.voucherCode,
+            status: populatedOrder.status,
+            items: populatedOrder.items.map(item => ({
+                productId: item.productId._id.toString(),
+                productName: item.productName,
+                quantity: item.quantity,
+                price: item.price
+            })),
+            subtotal: populatedOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+            total: populatedOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) + populatedOrder.shippingFee,
+            createdAt: populatedOrder.createdAt
+        });
 
     } catch (error) {
-        await connection.rollback();
+        await session.abortTransaction();
         console.error('Create public order error:', error);
         res.status(500).json({ message: 'Internal server error', error: error.message });
     } finally {
-        connection.release();
+        session.endSession();
     }
 };
 
@@ -91,34 +97,55 @@ export const createPublicOrder = async (req, res) => {
 // Get all orders
 export const getOrders = async (req, res) => {
     try {
-        const [orders] = await pool.query(`
-            SELECT 
-                o.order_id, o.customer_name, o.phone_number, o.address, o.shipping_fee, o.voucher_code, o.note, o.created_at, o.status_id,
-                (SELECT SUM(od.price * od.quantity) FROM order_details od WHERE od.order_id = o.order_id) as subtotal
-            FROM orders o
-            ORDER BY o.created_at DESC
-        `);
+        const orders = await Order.find()
+            .populate('items.productId', 'name pictureUrl')
+            .populate('createdBy', 'fullName username')
+            .sort({ createdAt: -1 })
+            .lean();
 
-        const ordersWithDetails = await Promise.all(orders.map(async (order) => {
-            const [details] = await pool.query('SELECT prod_id, quantity, price FROM order_details WHERE order_id = ?', [order.order_id]);
+        const ordersResponse = orders.map(order => {
+            const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            // Note: discount is calculated on frontend based on voucher, backend only stores voucher_code
+            const total = subtotal + order.shippingFee;
+
             return {
-                ...order,
-                status: idToStatus[order.status_id] || 'pending',
-                items: details,
-                total: parseFloat(order.subtotal || 0) + parseFloat(order.shipping_fee || 0) // Simplified total
+                order_id: order._id.toString(),
+                customer_name: order.customerName,
+                phone_number: order.phoneNumber,
+                address: order.address,
+                note: order.note,
+                shipping_fee: order.shippingFee,
+                voucher_code: order.voucherCode,
+                status: order.status,
+                created_by: order.createdBy ? {
+                    user_id: order.createdBy._id.toString(),
+                    full_name: order.createdBy.fullName,
+                    username: order.createdBy.username
+                } : null,
+                items: order.items.map(item => ({
+                    prod_id: item.productId?._id?.toString() || item.productId,
+                    product_name: item.productName,
+                    quantity: item.quantity,
+                    price: item.price
+                })),
+                subtotal,
+                total,
+                created_at: order.createdAt
             };
-        }));
+        });
 
-        res.json(ordersWithDetails);
+        res.json(ordersResponse);
     } catch (error) {
         console.error('Get orders error:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
 
-// Create a new order
+// Create a new order (admin)
 export const createOrder = async (req, res) => {
-    const connection = await pool.getConnection();
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
         const {
             customerName, customerPhone, customerAddress, note,
@@ -126,64 +153,89 @@ export const createOrder = async (req, res) => {
         } = req.body;
 
         if (!customerName || !customerPhone || !customerAddress || !items || items.length === 0) {
+            await session.abortTransaction();
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
-        const orderId = uuidv4();
-        const statusId = statusToId[status] || 'PEN';
         const createdBy = req.user.id;
 
-        const finalVoucherCode = voucherCode || null;
-
-        await connection.beginTransaction();
-
-        await connection.query(
-            `INSERT INTO orders (order_id, customer_name, phone_number, address, note, shipping_fee, voucher_code, status_id, created_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [orderId, customerName, customerPhone, customerAddress, note, shippingFee, finalVoucherCode, statusId, createdBy]
-        );
-
+        // Validate and prepare items
+        const orderItems = [];
         for (const item of items) {
-            await connection.query(
-                `INSERT INTO order_details (order_id, prod_id, quantity, price) VALUES (?, ?, ?, ?)`,
-                [orderId, item.productId, item.quantity, item.price]
-            );
+            const product = await Product.findById(item.productId).session(session);
+            if (!product) {
+                await session.abortTransaction();
+                return res.status(404).json({ message: `Product ${item.productId} not found` });
+            }
             
-            // Reduce product stock
-            await connection.query(
-                'UPDATE products SET stock = stock - ? WHERE prod_id = ?',
-                [item.quantity, item.productId]
-            );
+            if (product.stock < item.quantity) {
+                await session.abortTransaction();
+                return res.status(400).json({ 
+                    message: `Insufficient stock for ${product.name}. Available: ${product.stock}` 
+                });
+            }
+
+            // Reduce stock
+            product.stock -= item.quantity;
+            await product.save({ session });
+
+            orderItems.push({
+                productId: product._id,
+                productName: product.name,
+                quantity: item.quantity,
+                price: item.price
+            });
         }
 
-        await connection.commit();
+        // Create order
+        const newOrder = await Order.create([{
+            customerName,
+            phoneNumber: customerPhone,
+            address: customerAddress,
+            note: note || '',
+            shippingFee: shippingFee || 0,
+            voucherCode: voucherCode || null,
+            items: orderItems,
+            status: status || 'pending',
+            createdBy
+        }], { session });
 
-        // Fetch the newly created order with all details
-        const [orders] = await connection.query(`
-            SELECT 
-                o.order_id, o.customer_name, o.phone_number, o.address, o.shipping_fee, o.voucher_code, o.note, o.created_at, o.status_id,
-                (SELECT SUM(od.price * od.quantity) FROM order_details od WHERE od.order_id = o.order_id) as subtotal
-            FROM orders o
-            WHERE o.order_id = ?
-        `, [orderId]);
+        await session.commitTransaction();
 
-        const [details] = await connection.query('SELECT prod_id, quantity, price FROM order_details WHERE order_id = ?', [orderId]);
-        
-        const newOrder = {
-            ...orders[0],
-            status: idToStatus[orders[0].status_id] || 'pending',
-            items: details,
-            total: parseFloat(orders[0].subtotal || 0) + parseFloat(orders[0].shipping_fee || 0)
-        };
+        const populatedOrder = await Order.findById(newOrder[0]._id)
+            .populate('items.productId', 'name pictureUrl')
+            .populate('createdBy', 'fullName username');
 
-        res.status(201).json(newOrder);
+        res.status(201).json({
+            orderId: populatedOrder._id.toString(),
+            customerName: populatedOrder.customerName,
+            phoneNumber: populatedOrder.phoneNumber,
+            address: populatedOrder.address,
+            note: populatedOrder.note,
+            shippingFee: populatedOrder.shippingFee,
+            voucherCode: populatedOrder.voucherCode,
+            status: populatedOrder.status,
+            createdBy: populatedOrder.createdBy ? {
+                userId: populatedOrder.createdBy._id.toString(),
+                fullName: populatedOrder.createdBy.fullName
+            } : null,
+            items: populatedOrder.items.map(item => ({
+                productId: item.productId._id.toString(),
+                productName: item.productName,
+                quantity: item.quantity,
+                price: item.price
+            })),
+            subtotal: populatedOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+            total: populatedOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) + populatedOrder.shippingFee,
+            createdAt: populatedOrder.createdAt
+        });
 
     } catch (error) {
-        await connection.rollback();
+        await session.abortTransaction();
         console.error('Create order error:', error);
         res.status(500).json({ message: 'Internal server error' });
     } finally {
-        connection.release();
+        session.endSession();
     }
 };
 
@@ -200,90 +252,83 @@ export const updateOrder = async (req, res) => {
         items
     } = req.body;
 
-    const connection = await pool.getConnection();
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
-        await connection.beginTransaction();
-
-        // Check if order exists and get its status
-        const [orders] = await connection.query(
-            'SELECT status_id FROM orders WHERE order_id = ?',
-            [id]
-        );
-
-        if (orders.length === 0) {
-            await connection.rollback();
+        const order = await Order.findById(id).session(session);
+        if (!order) {
+            await session.abortTransaction();
             return res.status(404).json({ message: 'Order not found' });
         }
 
-        const orderStatus = idToStatus[orders[0].status_id];
-
-        // Only update stock if order is not cancelled
-        if (orderStatus !== 'cancelled') {
-            // Get old order details to restore stock
-            const [oldItems] = await connection.query(
-                'SELECT prod_id, quantity FROM order_details WHERE order_id = ?',
-                [id]
-            );
-
+        // Only restore/update stock if order is not cancelled
+        if (order.status !== 'cancelled') {
             // Restore stock from old items
-            for (const oldItem of oldItems) {
-                await connection.query(
-                    'UPDATE products SET stock = stock + ? WHERE prod_id = ?',
-                    [oldItem.quantity, oldItem.prod_id]
-                );
+            for (const oldItem of order.items) {
+                const product = await Product.findById(oldItem.productId).session(session);
+                if (product) {
+                    product.stock += oldItem.quantity;
+                    await product.save({ session });
+                }
             }
-        }
 
-        // 1. Update the main order table
-        const finalVoucherCode = voucherCode || null;
+            // Reduce stock for new items
+            if (items && items.length > 0) {
+                for (const item of items) {
+                    const product = await Product.findById(item.productId).session(session);
+                    if (!product) {
+                        await session.abortTransaction();
+                        return res.status(404).json({ message: `Product ${item.productId} not found` });
+                    }
+                    
+                    if (product.stock < item.quantity) {
+                        await session.abortTransaction();
+                        return res.status(400).json({ 
+                            message: `Insufficient stock for ${product.name}. Available: ${product.stock}` 
+                        });
+                    }
 
-        await connection.query(
-            `UPDATE orders SET 
-                customer_name = ?, 
-                phone_number = ?, 
-                address = ?, 
-                note = ?, 
-                shipping_fee = ?, 
-                voucher_code = ?
-             WHERE order_id = ?`,
-            [customerName, customerPhone, customerAddress, note, shippingFee, finalVoucherCode, id]
-        );
-
-        // 2. Delete old order details
-        await connection.query('DELETE FROM order_details WHERE order_id = ?', [id]);
-
-        // 3. Insert new order details and reduce stock
-        if (items && items.length > 0) {
-            for (const item of items) {
-                await connection.query(
-                    `INSERT INTO order_details (order_id, prod_id, quantity, price) VALUES (?, ?, ?, ?)`,
-                    [id, item.productId, item.quantity, item.price]
-                );
-
-                // Reduce stock for new items (only if order is not cancelled)
-                if (orderStatus !== 'cancelled') {
-                    await connection.query(
-                        'UPDATE products SET stock = stock - ? WHERE prod_id = ?',
-                        [item.quantity, item.productId]
-                    );
+                    product.stock -= item.quantity;
+                    await product.save({ session });
                 }
             }
         }
 
-        await connection.commit();
+        // Prepare new items array
+        const orderItems = [];
+        if (items && items.length > 0) {
+            for (const item of items) {
+                const product = await Product.findById(item.productId).session(session);
+                orderItems.push({
+                    productId: product._id,
+                    productName: product.name,
+                    quantity: item.quantity,
+                    price: item.price
+                });
+            }
+        }
 
-        // Fetch and return the updated order data
-        const [rows] = await pool.query('SELECT * FROM orders WHERE order_id = ?', [id]);
-        const updatedOrder = rows[0]; // Simplified, for a full object you might call getOrders logic
-        
-        res.json({ message: 'Order updated successfully', order: updatedOrder });
+        // Update order
+        order.customerName = customerName;
+        order.phoneNumber = customerPhone;
+        order.address = customerAddress;
+        order.note = note || '';
+        order.shippingFee = shippingFee || 0;
+        order.voucherCode = voucherCode || null;
+        order.items = orderItems;
+
+        await order.save({ session });
+        await session.commitTransaction();
+
+        res.json({ message: 'Order updated successfully', orderId: order._id.toString() });
 
     } catch (error) {
-        await connection.rollback();
+        await session.abortTransaction();
         console.error(`Update order ${id} error:`, error);
         res.status(500).json({ message: 'Internal server error' });
     } finally {
-        connection.release();
+        session.endSession();
     }
 };
 
@@ -292,119 +337,84 @@ export const updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!status || !statusToId[status]) {
+    const validStatuses = ['pending', 'confirmed', 'shipped', 'completed', 'cancelled'];
+    if (!status || !validStatuses.includes(status)) {
         return res.status(400).json({ message: 'Invalid status provided' });
     }
 
-    const connection = await pool.getConnection();
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
-        await connection.beginTransaction();
-
-        // Get current order status
-        const [currentOrder] = await connection.query(
-            'SELECT status_id FROM orders WHERE order_id = ?',
-            [id]
-        );
-
-        if (currentOrder.length === 0) {
-            await connection.rollback();
+        const order = await Order.findById(id).session(session);
+        if (!order) {
+            await session.abortTransaction();
             return res.status(404).json({ message: 'Order not found' });
         }
 
-        const oldStatus = idToStatus[currentOrder[0].status_id];
-        const statusId = statusToId[status];
+        const oldStatus = order.status;
 
         // If cancelling order, restore stock
         if (status === 'cancelled' && oldStatus !== 'cancelled') {
-            const [orderItems] = await connection.query(
-                'SELECT prod_id, quantity FROM order_details WHERE order_id = ?',
-                [id]
-            );
-
-            for (const item of orderItems) {
-                await connection.query(
-                    'UPDATE products SET stock = stock + ? WHERE prod_id = ?',
-                    [item.quantity, item.prod_id]
-                );
+            for (const item of order.items) {
+                const product = await Product.findById(item.productId).session(session);
+                if (product) {
+                    product.stock += item.quantity;
+                    await product.save({ session });
+                }
             }
         }
 
-        // If confirming order, add to sales table
-        if (status === 'confirmed' && oldStatus !== 'confirmed') {
-            const userId = req.user.id;
-            await connection.query(
-                'INSERT INTO sales (order_id, user_id) VALUES (?, ?)',
-                [id, userId]
-            );
-        }
-
         // Update order status
-        await connection.query(
-            'UPDATE orders SET status_id = ? WHERE order_id = ?',
-            [statusId, id]
-        );
+        order.status = status;
+        await order.save({ session });
 
-        await connection.commit();
+        await session.commitTransaction();
         res.json({ message: `Order status updated to ${status}` });
     } catch (error) {
-        await connection.rollback();
+        await session.abortTransaction();
         console.error(`Update order status ${id} error:`, error);
         res.status(500).json({ message: 'Internal server error' });
     } finally {
-        connection.release();
+        session.endSession();
     }
 };
 
 // Delete an order
 export const deleteOrder = async (req, res) => {
     const { id } = req.params;
-    const connection = await pool.getConnection();
+    
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
-        await connection.beginTransaction();
-
-        // Get order status before deleting
-        const [orders] = await connection.query(
-            'SELECT status_id FROM orders WHERE order_id = ?',
-            [id]
-        );
-
-        if (orders.length === 0) {
-            await connection.rollback();
+        const order = await Order.findById(id).session(session);
+        if (!order) {
+            await session.abortTransaction();
             return res.status(404).json({ message: 'Order not found' });
         }
 
-        const orderStatus = idToStatus[orders[0].status_id];
-
         // If order is not cancelled, restore stock
-        if (orderStatus !== 'cancelled') {
-            const [orderItems] = await connection.query(
-                'SELECT prod_id, quantity FROM order_details WHERE order_id = ?',
-                [id]
-            );
-
-            for (const item of orderItems) {
-                await connection.query(
-                    'UPDATE products SET stock = stock + ? WHERE prod_id = ?',
-                    [item.quantity, item.prod_id]
-                );
+        if (order.status !== 'cancelled') {
+            for (const item of order.items) {
+                const product = await Product.findById(item.productId).session(session);
+                if (product) {
+                    product.stock += item.quantity;
+                    await product.save({ session });
+                }
             }
         }
 
-        // Delete from sales table (CASCADE will handle this, but explicit is clearer)
-        await connection.query('DELETE FROM sales WHERE order_id = ?', [id]);
+        // Delete order
+        await Order.findByIdAndDelete(id).session(session);
         
-        // Delete order details and order
-        await connection.query('DELETE FROM order_details WHERE order_id = ?', [id]);
-        await connection.query('DELETE FROM orders WHERE order_id = ?', [id]);
-        
-        await connection.commit();
-
+        await session.commitTransaction();
         res.status(200).json({ message: 'Order deleted successfully' });
     } catch (error) {
-        await connection.rollback();
+        await session.abortTransaction();
         console.error(`Delete order ${id} error:`, error);
         res.status(500).json({ message: 'Internal server error' });
     } finally {
-        connection.release();
+        session.endSession();
     }
 };

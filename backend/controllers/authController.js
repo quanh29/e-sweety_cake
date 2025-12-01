@@ -1,6 +1,6 @@
 import { findUserByUsername, validatePassword, storeRefreshToken, findRefreshToken, revokeRefreshToken, createUser } from '../data/users.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../services/authService.js';
-import pool from '../config/mysql.js';
+import User from '../models/User.js';
 
 export const register = async (req, res) => {
     try {
@@ -37,24 +37,6 @@ export const login = async (req, res) => {
         }
 
         console.log('[login] User authenticated:', user.username);
-
-        // Clear any existing refresh token cookie before setting a new one
-        const oldToken = req.cookies.refreshToken;
-        if (oldToken) {
-            console.log('[login] Found old refresh token, revoking it');
-            try {
-                await revokeRefreshToken(oldToken);
-            } catch (err) {
-                console.log('[login] Failed to revoke old token:', err.message);
-            }
-        }
-
-        res.cookie('refreshToken', '', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            expires: new Date(0),
-        });
 
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);
@@ -186,21 +168,17 @@ export const getCurrentUser = async (req, res) => {
         }
 
         // Fetch full user info from database
-        const [rows] = await pool.query(
-            'SELECT user_id, full_name, username, is_admin FROM users WHERE user_id = ? AND is_actived = 1',
-            [userId]
-        );
+        const user = await User.findById(userId).lean();
 
-        if (rows.length === 0) {
+        if (!user || !user.isActive) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        const user = rows[0];
         res.json({
-            userId: user.user_id,
-            fullName: user.full_name,
+            userId: user._id.toString(),
+            fullName: user.fullName,
             username: user.username,
-            isAdmin: user.is_admin === 1
+            isAdmin: user.isAdmin
         });
     } catch (err) {
         console.error('Get current user error', err);

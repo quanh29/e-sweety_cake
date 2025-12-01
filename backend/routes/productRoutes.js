@@ -27,8 +27,8 @@ router.get('/', authenticateJWT, authorizeRoles('user'), productController.getPr
 router.get('/:id', authenticateJWT, authorizeRoles('user'), productController.getProduct);
 
 // Admin routes
-router.post('/', authenticateJWT, authorizeRoles('admin'), upload.single('image'), productController.createProduct);
-router.put('/:id', authenticateJWT, authorizeRoles('admin'), upload.single('image'), productController.updateProduct);
-router.delete('/:id', authenticateJWT, authorizeRoles('admin'), productController.deleteProduct);
+router.post('/', authenticateJWT, authorizeRoles('user'), upload.single('image'), productController.createProduct);
+router.put('/:id', authenticateJWT, authorizeRoles('user'), upload.single('image'), productController.updateProduct);
+router.delete('/:id', authenticateJWT, authorizeRoles('user'), productController.deleteProduct);
 
 export default router;
