@@ -206,28 +206,33 @@ export const createOrder = async (req, res) => {
             .populate('items.productId', 'name pictureUrl')
             .populate('createdBy', 'fullName username');
 
+        const subtotal = populatedOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const total = subtotal + populatedOrder.shippingFee;
+
         res.status(201).json({
-            orderId: populatedOrder._id.toString(),
-            customerName: populatedOrder.customerName,
-            phoneNumber: populatedOrder.phoneNumber,
+            order_id: populatedOrder._id.toString(),
+            customer_name: populatedOrder.customerName,
+            phone_number: populatedOrder.phoneNumber,
             address: populatedOrder.address,
             note: populatedOrder.note,
-            shippingFee: populatedOrder.shippingFee,
-            voucherCode: populatedOrder.voucherCode,
+            shipping_fee: populatedOrder.shippingFee,
+            voucher_code: populatedOrder.voucherCode,
             status: populatedOrder.status,
-            createdBy: populatedOrder.createdBy ? {
-                userId: populatedOrder.createdBy._id.toString(),
-                fullName: populatedOrder.createdBy.fullName
+            created_by: populatedOrder.createdBy ? {
+                user_id: populatedOrder.createdBy._id.toString(),
+                full_name: populatedOrder.createdBy.fullName,
+                username: populatedOrder.createdBy.username
             } : null,
             items: populatedOrder.items.map(item => ({
-                productId: item.productId._id.toString(),
-                productName: item.productName,
+                prod_id: item.productId._id.toString(),
+                product_name: item.productName,
                 quantity: item.quantity,
                 price: item.price
             })),
-            subtotal: populatedOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-            total: populatedOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) + populatedOrder.shippingFee,
-            createdAt: populatedOrder.createdAt
+            subtotal,
+            discount: 0,
+            total,
+            created_at: populatedOrder.createdAt
         });
 
     } catch (error) {
