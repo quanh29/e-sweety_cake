@@ -26,14 +26,6 @@ app.use(express.json());
 //     credentials: true
 // }));
 
-app.use(cors({
-    origin: (origin, callback) => {
-        callback(null, origin);  // chấp nhận mọi origin, không thêm dấu /
-    },
-    credentials: true
-}));
-
-
 app.use(cookieParser());
 //logging middleware (in vietnam timezone)
 
