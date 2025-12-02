@@ -15,6 +15,7 @@ import UsersPage from './pages/UsersPage';
 import CartSidebar from './components/CartSidebar';
 import CheckoutModal from './components/CheckoutModal';
 import SuccessModal from './components/SuccessModal';
+import ScrollToTop from './components/ScrollToTop';
 import { Toaster, toast } from 'react-hot-toast';
 
 const PrivateRoute = ({ children }) => {
@@ -68,6 +69,7 @@ function App() {
     <CartProvider>
       <AdminProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <Toaster position="top-center" reverseOrder={false} />
           <Routes>
             <Route path="/" element={<Landing onCartClick={handleCartClick} />} />

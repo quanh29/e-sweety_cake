@@ -3,6 +3,7 @@ import { MapPin, Phone, Mail, Clock, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageTitle from '../components/PageTitle';
 import styles from './Contact.module.css';
 
 const Contact = () => {
@@ -55,6 +56,7 @@ const Contact = () => {
 
     return (
         <div className={styles.contactPage}>
+            <PageTitle title="Liên Hệ" />
             <Header />
 
             {/* Contact Content */}
@@ -142,7 +144,7 @@ const Contact = () => {
                                     </div>
                                     <div className={styles.infoContent}>
                                         <h3>Địa chỉ</h3>
-                                        <p>123 Đường ABC, Quận 1<br />TP. Hồ Chí Minh, Việt Nam</p>
+                                        <p>Số 1 Đại Cồ Việt, quận Hai Bà Trưng<br /> Hà Nội, Việt Nam</p>
                                     </div>
                                 </div>
 
@@ -153,7 +155,7 @@ const Contact = () => {
                                     <div className={styles.infoContent}>
                                         <h3>Điện thoại</h3>
                                         <p>
-                                            <a href="tel:+84123456789">0123 456 789</a><br />
+                                            <a href="tel:+84858974298">+84 858 974 298</a><br />
                                             <a href="tel:+84987654321">0987 654 321</a>
                                         </p>
                                     </div>
@@ -166,7 +168,7 @@ const Contact = () => {
                                     <div className={styles.infoContent}>
                                         <h3>Email</h3>
                                         <p>
-                                            <a href="mailto:info@sweetbakery.com">info@sweetbakery.com</a><br />
+                                            <a href="mailto:info@sweetbakery.com">contact@sweetbakery.com</a><br />
                                             <a href="mailto:support@sweetbakery.com">support@sweetbakery.com</a>
                                         </p>
                                     </div>

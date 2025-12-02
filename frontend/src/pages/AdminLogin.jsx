@@ -4,6 +4,7 @@ import axios from 'axios';
 import styles from './AdminLogin.module.css';
 import { toast } from 'react-hot-toast';
 import { useAdmin } from '../context/AdminContext';
+import PageTitle from '../components/PageTitle';
 
 const AdminLogin = () => {
   const [username, setUsername] = useState('');
@@ -109,6 +110,7 @@ const AdminLogin = () => {
 
   return (
     <div className={styles.container}>
+      <PageTitle title="Đăng Nhập Admin" />
       <form className={styles.form} onSubmit={handleSubmit}>
         <h2>Đăng nhập</h2>
   {/* error messages are shown via toast only */}

@@ -76,6 +76,26 @@
     transform: translateY(-3px);
 }
 
+/* Certification Logo */
+.certificationLogo {
+    margin-top: 25px;
+}
+
+.certificationLogo a {
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.certificationLogo a:hover {
+    transform: scale(1.05);
+}
+
+.certificationLogo img {
+    height: 60px;
+    width: auto;
+    display: block;
+}
+
 /* Link Lists */
 .linkList {
     list-style: none;

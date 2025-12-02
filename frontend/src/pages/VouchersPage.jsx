@@ -3,6 +3,7 @@ import { useAdmin } from '../context/AdminContext';
 import { formatDate } from '../utils/format';
 import Modal from '../components/Modal';
 import Button from '../components/Button';
+import PageTitle from '../components/PageTitle';
 import styles from './AdminCommon.module.css';
 import modalStyles from '../components/Modal.module.css';
 
@@ -104,6 +105,7 @@ const VouchersPage = () => {
 
   return (
     <div>
+      <PageTitle title="Quản Lý Voucher" />
       <div className={styles.pageHeader}>
         <h2>Quản lý Voucher</h2>
         <p>Quản lý mã giảm giá và khuyến mãi</p>

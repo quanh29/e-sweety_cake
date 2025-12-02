@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Award, Heart, Clock, Users } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageTitle from '../components/PageTitle';
 import styles from './About.module.css';
 
 const About = () => {
@@ -34,25 +35,25 @@ const About = () => {
 
     const stacks = [
         {
-            emoji: '🍰',
+            image: '/hero1.jpg',
             title: 'Câu Chuyện Của Chúng Tôi',
             content: 'Sweet Bakery được thành lập với niềm đam mê tạo ra những chiếc bánh ngọt tuyệt vời nhất. Khởi đầu từ một cửa hàng nhỏ, chúng tôi đã không ngừng phát triển và hoàn thiện kỹ năng làm bánh để mang đến cho khách hàng những sản phẩm chất lượng cao nhất.',
             reverse: false
         },
         {
-            emoji: '👨‍🍳',
+            image: '/hero2.jpg',
             title: 'Đội Ngũ Chuyên Nghiệp',
             content: 'Với hơn 10 năm kinh nghiệm trong ngành, chúng tôi tự hào là địa chỉ tin cậy của hàng ngàn khách hàng. Mỗi chiếc bánh không chỉ là món ăn ngon mà còn chứa đựng tình yêu và sự tận tâm của đội ngũ thợ làm bánh chuyên nghiệp.',
             reverse: true
         },
         {
-            emoji: '🌱',
+            image: '/hero3.jpg',
             title: 'Nguyên Liệu Tự Nhiên',
             content: 'Chúng tôi cam kết sử dụng 100% nguyên liệu tự nhiên, tươi mới được nhập khẩu từ các nguồn uy tín. Mỗi thành phần đều được lựa chọn kỹ lưỡng để đảm bảo chất lượng và hương vị tuyệt hảo nhất cho sản phẩm.',
             reverse: false
         },
         {
-            emoji: '💝',
+            image: '/hero4.jpg',
             title: 'Sứ Mệnh Của Chúng Tôi',
             content: 'Sứ mệnh của chúng tôi là mang đến niềm vui và hạnh phúc cho mọi người qua những chiếc bánh thơm ngon. Chúng tôi tin rằng mỗi chiếc bánh không chỉ là món tráng miệng mà còn là cầu nối kết nối yêu thương giữa những người thân yêu.',
             reverse: true
@@ -61,6 +62,7 @@ const About = () => {
 
     return (
         <div className={styles.aboutPage}>
+            <PageTitle title="Giới Thiệu" />
             <Header />
             {/* Hero Section */}
             <section className={styles.heroSection}>
@@ -82,7 +84,7 @@ const About = () => {
                         <div className={styles.stackInner}>
                             <div className={`${styles.storyGrid} ${stack.reverse ? styles.reverse : ''}`}>
                                 <div className={styles.storyImage}>
-                                    <div className={styles.imagePlaceholder}>{stack.emoji}</div>
+                                    <img src={stack.image} alt={stack.title} className={styles.stackImage} />
                                 </div>
                                 <div className={styles.storyContent}>
                                     <h2>{stack.title}</h2>

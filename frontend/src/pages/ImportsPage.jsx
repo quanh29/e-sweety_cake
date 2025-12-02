@@ -3,6 +3,7 @@ import { useAdmin } from '../context/AdminContext';
 import { formatCurrency, formatDate } from '../utils/format';
 import Modal from '../components/Modal';
 import Button from '../components/Button';
+import PageTitle from '../components/PageTitle';
 import ProductDropdown from '../components/ProductDropdown';
 import styles from './AdminCommon.module.css';
 import modalStyles from '../components/Modal.module.css';
@@ -127,6 +128,7 @@ const ImportsPage = () => {
 
   return (
     <div>
+      <PageTitle title="Quản Lý Nhập Hàng" />
       <div className={styles.pageHeader}>
         <h2>Quản lý nhập hàng</h2>
         <p>Quản lý các đơn nhập hàng từ nhà cung cấp</p>

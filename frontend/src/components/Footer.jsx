@@ -12,14 +12,14 @@ const Footer = () => {
                     {/* Company Info */}
                     <div className={styles.footerColumn}>
                         <h3 className={styles.footerTitle}>
-                            <i className="fas fa-birthday-cake"></i> Sweet Bakery
+                            <i className="fas fa-birthday-cake"></i> E-sweetie Bake
                         </h3>
                         <p className={styles.footerDesc}>
                             Mang đến những chiếc bánh ngọt thơm ngon, được làm từ nguyên liệu tươi mới và tự nhiên nhất. 
                             Chúng tôi cam kết chất lượng và hương vị tuyệt hảo trong từng sản phẩm.
                         </p>
                         <div className={styles.socialLinks}>
-                            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                            <a href="https://www.facebook.com/profile.php?id=61581598021141" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
                                 <Facebook size={24} />
                             </a>
                             <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
@@ -27,6 +27,11 @@ const Footer = () => {
                             </a>
                             <a href="mailto:info@sweetbakery.com" aria-label="Email">
                                 <Mail size={24} />
+                            </a>
+                        </div>
+                        <div className={styles.certificationLogo}>
+                            <a href="https://moit.gov.vn/" target="_blank" rel="noopener noreferrer">
+                                <img src="/logo-da-thong-bao-bo-cong-thuong-mau-xanh.png" alt="Đã thông báo Bộ Công Thương" />
                             </a>
                         </div>
                     </div>
@@ -48,15 +53,15 @@ const Footer = () => {
                         <ul className={styles.contactList}>
                             <li>
                                 <MapPin size={18} />
-                                <span>123 Đường ABC, Quận 1, TP.HCM</span>
+                                <span>Số 1 Đại Cồ Việt, quận Hai Bà Trưng, Hà Nội</span>
                             </li>
                             <li>
                                 <Phone size={18} />
-                                <span><a href="tel:+84123456789">0123 456 789</a></span>
+                                <span><a href="tel:+84858974298">+84 858 974 298</a></span>
                             </li>
                             <li>
                                 <Mail size={18} />
-                                <span><a href="mailto:info@sweetbakery.com">info@sweetbakery.com</a></span>
+                                <span><a href="mailto:contact@e-sweetiebake.com">contact@e-sweetiebake.com</a></span>
                             </li>
                         </ul>
                     </div>
@@ -84,7 +89,7 @@ const Footer = () => {
                 </div>
 
                 <div className={styles.footerBottom}>
-                    <p>&copy; {currentYear} Sweet Bakery. All rights reserved.</p>
+                    <p>&copy; {currentYear} E-sweetie Bake. All rights reserved.</p>
                 </div>
             </div>
         </footer>

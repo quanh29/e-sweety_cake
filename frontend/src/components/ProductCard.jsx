@@ -14,13 +14,20 @@ const ProductCard = ({ product }) => {
             <div className={styles.productImageContainer}>
                 <img src={product.image} alt={product.name} className={styles.productImage} />
             </div>
+            <div className={styles.separator}>
+                <div className={styles.separatorLine}></div>
+                <div className={styles.separatorDot}></div>
+                <div className={styles.separatorLine}></div>
+            </div>
             <div className={styles.productInfo}>
                 <h3 className={styles.productName}>{product.name}</h3>
                 <p className={styles.productDescription}>{product.description}</p>
                 <div className={styles.productPrice}>{formatPrice(product.price)}</div>
                 <div className={styles.productActions}>
                     <button className={styles.btn} onClick={handleAddToCart}>
-                        <img src="/cart-plus-svgrepo-com.svg" alt="Thêm vào giỏ" className={styles.btnIcon} /> Thêm vào giỏ hàng
+                        <img src="/cart-plus-svgrepo-com.svg" alt="Thêm vào giỏ" className={styles.btnIcon} />
+                        <span className={styles.btnTextFull}>Thêm vào giỏ hàng</span>
+                        <span className={styles.btnTextShort}>Thêm vào giỏ</span>
                     </button>
                 </div>
             </div>

@@ -3,6 +3,7 @@ import { useAdmin } from '../context/AdminContext';
 import { formatCurrency } from '../utils/format';
 import Modal from '../components/Modal';
 import Button from '../components/Button';
+import PageTitle from '../components/PageTitle';
 import styles from './AdminCommon.module.css';
 import modalStyles from '../components/Modal.module.css';
 
@@ -75,6 +76,7 @@ const ProductsPage = () => {
 
   return (
     <div>
+      <PageTitle title="Quản Lý Sản Phẩm" />
       <div className={styles.pageHeader}>
         <h2>Quản lý sản phẩm</h2>
         <p>Quản lý danh sách sản phẩm bánh ngọt</p>
@@ -152,7 +154,7 @@ const ProductsPage = () => {
           </div>
           <div className={modalStyles.formGroup}>
             <label>Mô tả</label>
-            <textarea name="description" defaultValue={editingProduct?.description} required />
+            <textarea name="description" defaultValue={editingProduct?.description} />
           </div>
           <div className={modalStyles.formGroup}>
             <label>Hình ảnh sản phẩm</label>

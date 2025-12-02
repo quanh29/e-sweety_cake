@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAdmin } from '../context/AdminContext';
 import { formatCurrency, formatDate } from '../utils/format';
 import Button from '../components/Button';
+import PageTitle from '../components/PageTitle';
 import styles from './AdminCommon.module.css';
 import OrderModal from '../components/OrderModal';
 
@@ -235,6 +236,7 @@ const OrdersPage = () => {
 
   return (
     <div>
+      <PageTitle title="Quản Lý Đơn Hàng" />
       <div className={styles.pageHeader}>
         <h2>Quản lý đơn hàng</h2>
         <p>Quản lý tất cả đơn hàng của cửa hàng</p>

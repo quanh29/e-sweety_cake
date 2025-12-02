@@ -31,6 +31,14 @@
     opacity: 0.9;
 }
 
+.logoImage {
+    width: 45px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
 .logo i {
     font-size: 2rem;
 }

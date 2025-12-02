@@ -145,6 +145,20 @@
     transition: transform 0.3s ease;
 }
 
+.stackImage {
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(212, 128, 106, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.stackImage:hover {
+    transform: scale(1.05);
+}
+
 .stackVisible .imagePlaceholder {
     animation: floatUp 0.8s ease-out;
 }
@@ -428,6 +442,10 @@
 
     .imagePlaceholder {
         font-size: 6rem;
+        max-width: 300px;
+    }
+
+    .stackImage {
         max-width: 300px;
     }
 

@@ -25,8 +25,8 @@ const Header = ({ onCartClick }) => {
         <header className={styles.header}>
             <div className={styles.container}>
                 <Link to="/" className={styles.logo}>
-                    <i className="fas fa-birthday-cake"></i>
-                    <h1>Sweet Bakery</h1>
+                    <img src="/logo.png" alt="E-sweetie Bake Logo" className={styles.logoImage} />
+                    <h1>E-sweetie Bake</h1>
                 </Link>
                 <nav className={styles.nav}>
                     <ul>
