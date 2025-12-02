@@ -1,0 +1,142 @@
+/* Skeleton Card */
+.skeletonCard {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.skeletonImage {
+    width: 100%;
+    aspect-ratio: 4.5 / 3;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+.separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 30px;
+    gap: 8px;
+}
+
+.separatorLine {
+    flex: 1;
+    height: 1.5px;
+    background: #e0e0e0;
+    opacity: 0.5;
+}
+
+.separatorDot {
+    width: 6px;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 50%;
+    position: relative;
+}
+
+.separatorDot::before,
+.separatorDot::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.5;
+}
+
+.separatorDot::before {
+    left: -12px;
+}
+
+.separatorDot::after {
+    right: -12px;
+}
+
+.skeletonContent {
+    padding: 0 20px 20px 20px;
+}
+
+.skeletonTitle {
+    height: 24px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    width: 80%;
+}
+
+.skeletonDescription {
+    height: 16px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.skeletonPrice {
+    height: 28px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    margin: 15px 0;
+    width: 40%;
+}
+
+.skeletonButton {
+    height: 44px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 25px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Add staggered animation delay for multiple skeletons */
+.skeletonCard:nth-child(1) .skeletonImage,
+.skeletonCard:nth-child(1) .skeletonTitle,
+.skeletonCard:nth-child(1) .skeletonDescription,
+.skeletonCard:nth-child(1) .skeletonPrice,
+.skeletonCard:nth-child(1) .skeletonButton {
+    animation-delay: 0s;
+}
+
+.skeletonCard:nth-child(2) .skeletonImage,
+.skeletonCard:nth-child(2) .skeletonTitle,
+.skeletonCard:nth-child(2) .skeletonDescription,
+.skeletonCard:nth-child(2) .skeletonPrice,
+.skeletonCard:nth-child(2) .skeletonButton {
+    animation-delay: 0.1s;
+}
+
+.skeletonCard:nth-child(3) .skeletonImage,
+.skeletonCard:nth-child(3) .skeletonTitle,
+.skeletonCard:nth-child(3) .skeletonDescription,
+.skeletonCard:nth-child(3) .skeletonPrice,
+.skeletonCard:nth-child(3) .skeletonButton {
+    animation-delay: 0.2s;
+}
+
+.skeletonCard:nth-child(4) .skeletonImage,
+.skeletonCard:nth-child(4) .skeletonTitle,
+.skeletonCard:nth-child(4) .skeletonDescription,
+.skeletonCard:nth-child(4) .skeletonPrice,
+.skeletonCard:nth-child(4) .skeletonButton {
+    animation-delay: 0.3s;
+}

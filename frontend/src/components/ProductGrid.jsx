@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
+import ProductCardSkeleton from './ProductCardSkeleton';
 import styles from './ProductGrid.module.css';
 import { publicAPI } from '../utils/api';
 
@@ -39,7 +40,18 @@ const ProductGrid = () => {
     }, []);
 
     if (loading) {
-        return <p>Loading products...</p>;
+        return (
+            <section className={styles.products} id="products">
+                <div className={styles.container}>
+                    <h2 className={styles.sectionTitle}>Sản Phẩm Của Chúng Tôi</h2>
+                    <div className={styles.productGrid}>
+                        {[...Array(8)].map((_, index) => (
+                            <ProductCardSkeleton key={index} />
+                        ))}
+                    </div>
+                </div>
+            </section>
+        );
     }
 
     if (error) {
@@ -51,8 +63,10 @@ const ProductGrid = () => {
             <div className={styles.container}>
                 <h2 className={styles.sectionTitle}>Sản Phẩm Của Chúng Tôi</h2>
                 <div className={styles.productGrid}>
-                    {products.map(product => (
-                        <ProductCard key={product.id} product={product} />
+                    {products.map((product, index) => (
+                        <div key={product.id} className={styles.productItem} style={{ animationDelay: `${index * 0.1}s` }}>
+                            <ProductCard product={product} />
+                        </div>
                     ))}
                 </div>
             </div>
