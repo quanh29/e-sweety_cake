@@ -42,12 +42,27 @@ const Contact = () => {
 
         setIsSubmitting(true);
 
-        // Simulate API call
+        // Send to backend
         try {
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            toast.success('Gửi tin nhắn thành công! Chúng tôi sẽ liên hệ lại sớm.');
-            setFormData({ name: '', email: '', phone: '', message: '' });
+            const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+            const response = await fetch(`${SERVER_URL}/api/contacts/public`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                toast.success('Gửi tin nhắn thành công! Chúng tôi sẽ liên hệ lại sớm.');
+                setFormData({ name: '', email: '', phone: '', message: '' });
+            } else {
+                toast.error(data.message || 'Có lỗi xảy ra. Vui lòng thử lại!');
+            }
         } catch (error) {
+            console.error('Contact form error:', error);
             toast.error('Có lỗi xảy ra. Vui lòng thử lại!');
         } finally {
             setIsSubmitting(false);

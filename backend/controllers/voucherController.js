@@ -150,6 +150,9 @@ export const toggleVoucherStatus = async (req, res) => {
             return res.status(404).json({ message: 'Không tìm thấy voucher' });
         }
 
+        // Store original data for audit log
+        req.originalData = { isActive: voucher.isActive };
+
         const newStatus = !voucher.isActive;
         voucher.isActive = newStatus;
         await voucher.save();

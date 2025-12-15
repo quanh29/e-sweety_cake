@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useAdmin } from '../context/AdminContext';
 import Modal from './Modal';
 import Button from './Button';
-import { Package, Cake, Download, Tag, Users, Settings, LogOut, User } from 'lucide-react';
+import { Package, Cake, Download, Tag, Users, Settings, LogOut, User, History, Mail } from 'lucide-react';
 import styles from './AdminLayout.module.css';
 import modalStyles from './Modal.module.css';
 
@@ -140,7 +140,7 @@ const AdminLayout = () => {
     <div className={styles.container}>
       <div className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
-          <h1><Cake size={28} /> E-Sweetie</h1>
+          <h1><Cake size={28} /> E-Sweetie Bake</h1>
           <p>Quản lý cửa hàng bánh ngọt</p>
         </div>
         <div className={styles.sidebarMenu}>
@@ -188,6 +188,24 @@ const AdminLayout = () => {
           >
             <Users className={styles.menuIcon} size={20} />
             <span>Người dùng</span>
+          </NavLink>
+          <NavLink
+            to="/admin/manage/contact-messages"
+            className={({ isActive }) =>
+              `${styles.menuItem} ${isActive ? styles.active : ''}`
+            }
+          >
+            <Mail className={styles.menuIcon} size={20} />
+            <span>Tin nhắn liên hệ</span>
+          </NavLink>
+          <NavLink
+            to="/admin/manage/audit-logs"
+            className={({ isActive }) =>
+              `${styles.menuItem} ${isActive ? styles.active : ''}`
+            }
+          >
+            <History className={styles.menuIcon} size={20} />
+            <span>Lịch sử hoạt động</span>
           </NavLink>
         </div>
         

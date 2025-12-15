@@ -289,3 +289,31 @@ export const importAPI = {
     return response.data;
   }
 };
+
+// Audit Log API endpoints (admin only)
+export const auditLogAPI = {
+  getAll: async (page = 1, limit = 10, filters = {}) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...filters
+    });
+    const response = await axiosInstance.get(`/audit-logs?${params}`);
+    return response.data;
+  },
+
+  getById: async (id) => {
+    const response = await axiosInstance.get(`/audit-logs/${id}`);
+    return response.data;
+  },
+
+  getByResource: async (resourceType, resourceId) => {
+    const response = await axiosInstance.get(`/audit-logs/resource/${resourceType}/${resourceId}`);
+    return response.data;
+  },
+
+  getByUser: async (userId, page = 1, limit = 10) => {
+    const response = await axiosInstance.get(`/audit-logs/user/${userId}?page=${page}&limit=${limit}`);
+    return response.data;
+  }
+};

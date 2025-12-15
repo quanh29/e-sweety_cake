@@ -1,0 +1,361 @@
+/* Testimonial Section */
+.testimonialSection {
+    padding: 5rem 0;
+    background: #fafafa;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+/* Section Header */
+.sectionHeader {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.sectionHeader h2 {
+    font-size: 2.5rem;
+    color: #2c1810;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.sectionHeader p {
+    font-size: 1.2rem;
+    color: #5a3a2a;
+    line-height: 1.6;
+}
+
+/* Slider Wrapper */
+.sliderWrapper {
+    position: relative;
+    background: white;
+    border-radius: 20px;
+    padding: 2rem 1rem;
+    box-shadow: 0 10px 40px rgba(139, 90, 60, 0.12);
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+}
+
+.sliderWrapper:hover {
+    box-shadow: 0 15px 50px rgba(139, 90, 60, 0.18);
+}
+
+/* Slides Container */
+.slidesContainer {
+    position: relative;
+    height: 350px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Slide */
+.slide {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+    z-index: 10;
+}
+
+.slide.prev {
+    transform: translateX(-100%);
+}
+
+.slideContent {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 0 1rem;
+}
+
+/* Stars */
+.stars {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    justify-content: center;
+}
+
+.star {
+    color: #d4a574;
+}
+
+/* Quote */
+.quote {
+    font-size: 1.2rem;
+    color: #5a3a2a;
+    line-height: 1.8;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-style: italic;
+    font-weight: 500;
+}
+
+/* Author */
+.author {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: auto;
+}
+
+.authorImage {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #d4a574;
+}
+
+.authorInfo {
+    text-align: left;
+}
+
+.authorInfo h3 {
+    font-size: 1.1rem;
+    color: #2c1810;
+    font-weight: 600;
+    margin: 0;
+}
+
+.authorInfo p {
+    font-size: 0.95rem;
+    color: #8b5a3c;
+    margin: 0.25rem 0 0 0;
+}
+
+/* Navigation Buttons */
+.navButton {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(139, 90, 60, 0.9);
+    color: white;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 15;
+    opacity: 0;
+}
+
+.sliderWrapper:hover .navButton {
+    opacity: 1;
+}
+
+.navButton:first-of-type {
+    left: -10px;
+}
+
+.navButton:last-of-type {
+    right: -10px;
+}
+
+.navButton:hover {
+    background: #6d4530;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.navButton:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* Dots */
+.dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #d4a574;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.5;
+}
+
+.dot.active {
+    background: #8b5a3c;
+    opacity: 1;
+    width: 30px;
+    border-radius: 6px;
+}
+
+.dot:hover {
+    opacity: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .testimonialSection {
+        padding: 3rem 0;
+    }
+
+    .container {
+        padding: 0 1.5rem;
+    }
+
+    .sectionHeader h2 {
+        font-size: 2rem;
+    }
+
+    .sectionHeader p {
+        font-size: 1rem;
+    }
+
+    .sliderWrapper {
+        padding: 2.5rem 1.5rem;
+        border-radius: 15px;
+    }
+
+    .slidesContainer {
+        height: 320px;
+    }
+
+    .slideContent {
+        padding: 0 0.75rem;
+    }
+
+    .quote {
+        font-size: 1.1rem;
+    }
+
+    .authorImage {
+        width: 55px;
+        height: 55px;
+    }
+
+    .authorInfo h3 {
+        font-size: 1rem;
+    }
+
+    .authorInfo p {
+        font-size: 0.9rem;
+    }
+
+    .navButton {
+        width: 45px;
+        height: 45px;
+    }
+
+    .navButton:first-of-type {
+        left: 5px;
+    }
+
+    .navButton:last-of-type {
+        right: 5px;
+    }
+
+    .sliderWrapper:hover .navButton {
+        opacity: 0.7;
+    }
+}
+
+@media (max-width: 480px) {
+    .testimonialSection {
+        padding: 2rem 0;
+    }
+
+    .container {
+        padding: 0 1rem;
+    }
+
+    .sectionHeader h2 {
+        font-size: 1.5rem;
+    }
+
+    .sectionHeader p {
+        font-size: 0.95rem;
+    }
+
+    .sectionHeader {
+        margin-bottom: 2rem;
+    }
+
+    .sliderWrapper {
+        padding: 1.5rem 1rem;
+        border-radius: 12px;
+    }
+
+    .slidesContainer {
+        height: 380px;
+    }
+
+    .slideContent {
+        padding: 0 0.5rem;
+    }
+
+    .quote {
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stars {
+        margin-bottom: 1rem;
+    }
+
+    .author {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+
+    .authorInfo {
+        text-align: center;
+    }
+
+    .authorImage {
+        width: 50px;
+        height: 50px;
+    }
+
+    .navButton {
+        width: 40px;
+        height: 40px;
+        opacity: 0.7 !important;
+    }
+
+    .navButton:first-of-type {
+        left: 0;
+    }
+
+    .navButton:last-of-type {
+        right: 0;
+    }
+
+    .dot {
+        width: 10px;
+        height: 10px;
+    }
+
+    .dot.active {
+        width: 28px;
+    }
+}

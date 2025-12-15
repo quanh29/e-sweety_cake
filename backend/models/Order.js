@@ -19,6 +19,11 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    paymentMethod: {
+        type: String,
+        enum: ['cod', 'bank_transfer'],
+        default: 'cod'
+    },
     voucherCode: {
         type: String,
         default: null

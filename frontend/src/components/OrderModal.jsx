@@ -7,12 +7,13 @@ import dropdownStyles from './ProductDropdown.module.css';
 import ProductDropdown from './ProductDropdown';
 import { formatCurrency } from '../utils/format';
 
-const OrderModal = ({ isOpen, onClose, editingOrder, products = [], vouchers = [], addOrder, updateOrder, viewOnly = false }) => {
+const OrderModal = ({ isOpen, onClose, editingOrder, products = [], vouchers = [], addOrder, updateOrder, viewOnly = false, onSaved }) => {
   const [orderItems, setOrderItems] = useState([]);
   const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', address: '', note: '' });
   const [voucherCode, setVoucherCode] = useState('');
   const [appliedVoucherCode, setAppliedVoucherCode] = useState('');
   const [shippingFee, setShippingFee] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState('cod');
   const [orderStatus, setOrderStatus] = useState('pending');
   const [orderTotals, setOrderTotals] = useState({ subtotal: 0, discount: 0, total: 0 });
 
@@ -30,6 +31,7 @@ const OrderModal = ({ isOpen, onClose, editingOrder, products = [], vouchers = [
       setVoucherCode(vcode);
       setAppliedVoucherCode(vcode);
       setShippingFee(editingOrder.shippingFee || 0);
+      setPaymentMethod(editingOrder.paymentMethod || editingOrder.payment_method || 'cod');
       setOrderStatus(editingOrder.status || 'pending');
     } else {
       setCustomerInfo({ name: '', phone: '', address: '', note: '' });
@@ -129,7 +131,7 @@ const OrderModal = ({ isOpen, onClose, editingOrder, products = [], vouchers = [
     toast.success(`Đã áp dụng mã giảm giá: ${voucher.code}`);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const finalItems = orderItems.filter(item => item.productId).map(item => ({ ...item, subtotal: item.quantity * item.price }));
     if (finalItems.length === 0) {
@@ -144,13 +146,19 @@ const OrderModal = ({ isOpen, onClose, editingOrder, products = [], vouchers = [
       status: orderStatus,
       items: finalItems,
       voucherCode: appliedVoucherCode && String(appliedVoucherCode).toLowerCase() === 'none' ? '' : appliedVoucherCode,
+      paymentMethod: paymentMethod || 'cod',
       shippingFee,
       ...orderTotals,
       createdAt: editingOrder?.createdAt || new Date()
     };
 
-    if (editingOrder) updateOrder(editingOrder.id, orderData);
-    else addOrder(orderData);
+    if (editingOrder) {
+      await updateOrder(editingOrder.id, orderData);
+      if (typeof onSaved === 'function') onSaved({ ...editingOrder, ...orderData, id: editingOrder.id });
+    } else {
+      await addOrder(orderData);
+      if (typeof onSaved === 'function') onSaved({ ...orderData });
+    }
 
     onClose();
   };
@@ -241,6 +249,46 @@ const OrderModal = ({ isOpen, onClose, editingOrder, products = [], vouchers = [
             {!viewOnly && <Button type="button" variant="primary" onClick={handleApplyVoucher}>Áp dụng</Button>}
           </div>
           {appliedVoucherCode && (<small className={styles.voucherApplied}>✓ Đã áp dụng mã: {appliedVoucherCode}</small>)}
+        </div>
+
+        <div className={styles.formGroup}>
+          <label>Phương thức thanh toán</label>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('cod')}
+              className={paymentMethod === 'cod' ? styles.selectedPayment : ''}
+              style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: 8, border: paymentMethod === 'cod' ? '2px solid #10b981' : '1px solid #e5e7eb', background: paymentMethod === 'cod' ? '#ecfdf5' : 'white' }}
+              disabled={viewOnly}
+            >
+              Thanh toán khi nhận hàng (COD)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('bank_transfer')}
+              className={paymentMethod === 'bank_transfer' ? styles.selectedPayment : ''}
+              style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: 8, border: paymentMethod === 'bank_transfer' ? '2px solid #10b981' : '1px solid #e5e7eb', background: paymentMethod === 'bank_transfer' ? '#ecfdf5' : 'white' }}
+              disabled={viewOnly}
+            >
+              Chuyển khoản ngân hàng
+            </button>
+          </div>
+
+          {/* QR dropdown for bank transfer */}
+          <div style={{ maxHeight: paymentMethod === 'bank_transfer' ? 240 : 0, overflow: 'hidden', transition: 'max-height 0.4s ease', marginTop: 12 }}>
+            <div style={{ padding: paymentMethod === 'bank_transfer' ? '12px' : '0 12px', background: '#fff', borderRadius: 8, border: '1px dashed #e5e7eb' }}>
+              <p style={{ margin: 0, fontSize: 14, color: '#374151' }}>Quét mã QR để chuyển khoản hoặc chuyển khoản theo thông tin:</p>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 10 }}>
+                <img src="../../payment_qr.jpg" alt="Bank QR" style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8, background: '#f3f4f6' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                <div style={{ fontSize: 14, color: '#374151' }}>
+                  <div><strong>Ngân hàng:</strong> MB Bank</div>
+                  <div><strong>Chủ TK:</strong> TRAN QUOC ANH</div>
+                  <div><strong>STK:</strong> 1129082004</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className={styles.totalsCard}>

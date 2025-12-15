@@ -10,6 +10,8 @@ import orderRoutes from './routes/orderRoutes.js';
 import voucherRoutes from './routes/voucherRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import importRoutes from './routes/importRoutes.js';
+import auditLogRoutes from './routes/auditLogRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,6 +48,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/vouchers', voucherRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/imports', importRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/contacts', contactRoutes);
 
 // Protected route examples
 app.get('/api/profile', authenticateJWT, (req, res) => {

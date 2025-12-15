@@ -70,6 +70,7 @@ export function AdminProvider({ children }) {
           customerNote: o.note,
           shippingFee: parseFloat(o.shipping_fee),
           voucherCode: o.voucher_code,
+          paymentMethod: o.payment_method || 'cod',
           status: o.status,
           items: o.items.map(item => ({
             productId: item.prod_id,

@@ -228,6 +228,9 @@ export const updateImport = async (req, res) => {
             return res.status(404).json({ message: 'Không tìm thấy đơn nhập hàng' });
         }
 
+        // Store original data for audit log
+        req.originalData = entry.toObject();
+
         // Reverse old stock updates
         for (const oldItem of entry.items) {
             const product = await Product.findById(oldItem.productId).session(session);

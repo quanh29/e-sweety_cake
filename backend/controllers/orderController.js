@@ -10,7 +10,7 @@ export const createPublicOrder = async (req, res) => {
     try {
         const {
             customerName, customerPhone, customerAddress, note,
-            shippingFee, voucherCode, items
+            shippingFee, voucherCode, items, paymentMethod
         } = req.body;
 
         if (!customerName || !customerPhone || !customerAddress || !items || items.length === 0) {
@@ -54,6 +54,7 @@ export const createPublicOrder = async (req, res) => {
             note: note || '',
             shippingFee: shippingFee || 0,
             voucherCode: voucherCode || null,
+            paymentMethod: paymentMethod || 'cod',
             items: orderItems,
             status: 'pending',
             createdBy: null // Public order has no creator
@@ -72,6 +73,7 @@ export const createPublicOrder = async (req, res) => {
             note: populatedOrder.note,
             shippingFee: populatedOrder.shippingFee,
             voucherCode: populatedOrder.voucherCode,
+            paymentMethod: populatedOrder.paymentMethod,
             status: populatedOrder.status,
             items: populatedOrder.items.map(item => ({
                 productId: item.productId._id.toString(),
@@ -116,6 +118,7 @@ export const getOrders = async (req, res) => {
                 note: order.note,
                 shipping_fee: order.shippingFee,
                 voucher_code: order.voucherCode,
+                payment_method: order.paymentMethod || 'cod',
                 status: order.status,
                 created_by: order.createdBy ? {
                     user_id: order.createdBy._id.toString(),
@@ -148,8 +151,8 @@ export const createOrder = async (req, res) => {
     
     try {
         const {
-            customerName, customerPhone, customerAddress, note,
-            shippingFee, voucherCode, items, status
+            customerName, customerPhone, customerAddress, customerNote,
+            shippingFee, voucherCode, items, status, paymentMethod
         } = req.body;
 
         if (!customerName || !customerPhone || !customerAddress || !items || items.length === 0) {
@@ -192,9 +195,10 @@ export const createOrder = async (req, res) => {
             customerName,
             phoneNumber: customerPhone,
             address: customerAddress,
-            note: note || '',
+            note: customerNote || '',
             shippingFee: shippingFee || 0,
             voucherCode: voucherCode || null,
+            paymentMethod: paymentMethod || 'cod',
             items: orderItems,
             status: status || 'pending',
             createdBy
@@ -217,6 +221,7 @@ export const createOrder = async (req, res) => {
             note: populatedOrder.note,
             shipping_fee: populatedOrder.shippingFee,
             voucher_code: populatedOrder.voucherCode,
+            payment_method: populatedOrder.paymentMethod || 'cod',
             status: populatedOrder.status,
             created_by: populatedOrder.createdBy ? {
                 user_id: populatedOrder.createdBy._id.toString(),
@@ -251,10 +256,11 @@ export const updateOrder = async (req, res) => {
         customerName,
         customerPhone,
         customerAddress,
-        note,
+        customerNote,
         shippingFee,
         voucherCode,
-        items
+        items,
+        paymentMethod
     } = req.body;
 
     const session = await mongoose.startSession();
@@ -266,6 +272,9 @@ export const updateOrder = async (req, res) => {
             await session.abortTransaction();
             return res.status(404).json({ message: 'Order not found' });
         }
+
+        // Store original data for audit log
+        req.originalData = order.toObject();
 
         // Only restore/update stock if order is not cancelled
         if (order.status !== 'cancelled') {
@@ -318,15 +327,16 @@ export const updateOrder = async (req, res) => {
         order.customerName = customerName;
         order.phoneNumber = customerPhone;
         order.address = customerAddress;
-        order.note = note || '';
+        order.note = customerNote || '';
         order.shippingFee = shippingFee || 0;
         order.voucherCode = voucherCode || null;
+        order.paymentMethod = paymentMethod || order.paymentMethod || 'cod';
         order.items = orderItems;
 
         await order.save({ session });
         await session.commitTransaction();
 
-        res.json({ message: 'Order updated successfully', orderId: order._id.toString() });
+        res.json({ message: 'Order updated successfully', orderId: order._id.toString(), newData: order });
 
     } catch (error) {
         await session.abortTransaction();
@@ -356,6 +366,9 @@ export const updateOrderStatus = async (req, res) => {
             await session.abortTransaction();
             return res.status(404).json({ message: 'Order not found' });
         }
+
+        // Store original data for audit log
+        req.originalData = { status: order.status };
 
         const oldStatus = order.status;
 

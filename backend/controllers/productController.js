@@ -72,6 +72,12 @@ export const updateProduct = async (req, res) => {
         const { name, description, price, stock } = req.body;
         const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
+        // Store original data for audit log
+        const oldProduct = await productService.getProductById(req.params.id);
+        if (oldProduct) {
+            req.originalData = oldProduct;
+        }
+
         const productData = {
             name,
             description,

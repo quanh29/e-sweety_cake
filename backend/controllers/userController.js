@@ -105,6 +105,14 @@ export const updateUser = async (req, res) => {
             return res.status(404).json({ message: 'Người dùng không tồn tại' });
         }
 
+        // Store original data for audit log
+        req.originalData = {
+            fullname: user.fullName,
+            username: user.username,
+            role: user.isAdmin ? 'admin' : 'user',
+            status: user.isActive ? 'active' : 'inactive'
+        };
+
         // Prepare update query
         let updateQuery = 'UPDATE users SET ';
         const updateParams = [];
@@ -221,6 +229,9 @@ export const toggleUserStatus = async (req, res) => {
         if (user.isAdmin) {
             return res.status(403).json({ message: 'Không thể thay đổi trạng thái tài khoản admin' });
         }
+
+        // Store original data for audit log
+        req.originalData = { isActive: user.isActive };
 
         const newStatus = !user.isActive;
         user.isActive = newStatus;

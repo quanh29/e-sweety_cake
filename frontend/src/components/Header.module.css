@@ -48,6 +48,13 @@
     font-weight: 600;
 }
 
+/* Desktop Navigation */
+.nav {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
 .nav ul {
     display: flex;
     list-style: none;
@@ -63,6 +70,69 @@
 
 .nav a:hover {
     opacity: 0.8;
+}
+
+/* Mobile Menu Button */
+.menuButton {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: transform 0.3s ease;
+}
+
+.menuButton:hover {
+    transform: scale(1.1);
+}
+
+/* Mobile Navigation */
+.mobileNav {
+    display: none;
+    position: absolute;
+    top: 70px;
+    left: 0;
+    right: 0;
+    background: #4a2c2a;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 99;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobileNav.open {
+    max-height: 300px;
+}
+
+.mobileNav ul {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    padding: 1rem 0;
+}
+
+.mobileNav li {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobileNav li:last-child {
+    border-bottom: none;
+}
+
+.mobileNav a {
+    display: block;
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 1rem 2rem;
+    transition: background-color 0.3s ease;
+}
+
+.mobileNav a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    opacity: 1;
 }
 
 .cartIcon {
@@ -96,6 +166,76 @@
     justify-content: center;
     font-size: 0.75rem;
     font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+
+    .logo h1 {
+        display: none;
+    }
+
+    .logoImage {
+        width: 40px;
+        height: 40px;
+    }
+
+    /* Hide desktop nav */
+    .nav {
+        display: none;
+    }
+
+    /* Show mobile menu button */
+    .menuButton {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        order: 2;
+        margin: 0 1rem;
+    }
+
+    /* Show mobile nav */
+    .mobileNav {
+        display: block;
+    }
+
+    .cartIcon {
+        order: 3;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 0 10px;
+    }
+
+    .logo {
+        gap: 8px;
+    }
+
+    .logoImage {
+        width: 35px;
+        height: 35px;
+    }
+
+    .cartImage {
+        width: 25px;
+        height: 25px;
+    }
+
+    .cartCount {
+        width: 18px;
+        height: 18px;
+        font-size: 0.65rem;
+    }
+
+    .mobileNav a {
+        padding: 0.85rem 1.5rem;
+        font-size: 0.95rem;
+    }
 }
 
 /* Responsive */

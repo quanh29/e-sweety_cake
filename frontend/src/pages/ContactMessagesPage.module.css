@@ -1,0 +1,69 @@
+.detailsContainer {
+  padding: 10px 0;
+}
+
+.detailRow {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+}
+
+.detailLabel {
+  font-weight: 600;
+  color: #374151;
+  min-width: 120px;
+}
+
+.detailValue {
+  color: #6b7280;
+  flex: 1;
+}
+
+.detailValue a {
+  color: #10b981;
+  text-decoration: none;
+}
+
+.detailValue a:hover {
+  text-decoration: underline;
+}
+
+.messageSection,
+.statusSection {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 2px solid #e5e7eb;
+}
+
+.messageSection h3,
+.statusSection h3 {
+  font-size: 1.1em;
+  color: #1f2937;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.messageContent {
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid #10b981;
+  color: #374151;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 2px solid #e5e7eb;
+}

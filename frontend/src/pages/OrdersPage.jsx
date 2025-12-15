@@ -24,8 +24,15 @@ const OrdersPage = () => {
   const [shippingFee, setShippingFee] = useState(0);
   const [orderStatus, setOrderStatus] = useState('pending');
   const [orderTotals, setOrderTotals] = useState({ subtotal: 0, discount: 0, total: 0 });
+  // local copy of orders to allow immediate UI updates without full page reload
+  const [localOrders, setLocalOrders] = useState([]);
 
-  const filteredOrders = orders.filter((order) => {
+  // keep a local view of orders so we can patch updates immediately
+  useEffect(() => {
+    setLocalOrders(orders || []);
+  }, [orders]);
+
+  const filteredOrders = (localOrders || []).filter((order) => {
     const matchSearch =
       order.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customerPhone?.includes(searchTerm);
@@ -101,10 +108,20 @@ const OrdersPage = () => {
         address: order.customerAddress,
         note: order.customerNote || ''
       });
+
       setOrderItems(order.items || [{ productId: '', quantity: 1, price: 0 }]);
       setVoucherCode(order.voucherCode || '');
       setAppliedVoucherCode(order.voucherCode || '');
       setShippingFee(order.shippingFee || 0);
+      // support both camelCase and snake_case from backend
+      setOrderStatus(order.status);
+      // payment method
+      const pm = order.paymentMethod || order.payment_method || 'cod';
+      setOrderTotals(prev => ({ ...prev }));
+      // store in local state so modal can use it via editingOrder
+      setOrderItems(order.items || [{ productId: '', quantity: 1, price: 0 }]);
+      // attach payment method into editingOrder for modal to pick up
+      setEditingOrder({ ...order, paymentMethod: pm });
       setOrderStatus(order.status);
     } else {
       // Reset for new order
@@ -209,6 +226,17 @@ const OrdersPage = () => {
     }
   };
 
+  // update localOrders when an order is saved from the modal
+  const handleSavedOrder = (updated) => {
+    if (!updated) return;
+    if (updated.id) {
+      setLocalOrders(prev => prev.map(o => (o.id === updated.id ? { ...o, ...updated } : o)));
+    } else {
+      // new order without id — prepend to list as best-effort
+      setLocalOrders(prev => [updated, ...prev]);
+    }
+  };
+
   const handleConfirm = (id) => {
     updateOrderStatus(id, 'confirmed');
   };
@@ -266,6 +294,7 @@ const OrdersPage = () => {
               <th>Mã đơn</th>
               <th>Khách hàng</th>
               <th>Điện thoại</th>
+              <th>Thanh toán</th>
               <th>Tổng tiền</th>
               <th>Trạng thái</th>
               <th>Ngày tạo</th>
@@ -285,6 +314,7 @@ const OrdersPage = () => {
                   <td>#{order.id}</td>
                   <td>{order.customerName}</td>
                   <td>{order.customerPhone}</td>
+                  <td>{(order.paymentMethod || order.payment_method || 'cod') === 'cod' ? 'COD' : 'Chuyển khoản'}</td>
                   <td>{formatCurrency(calculateOrderTotal(order))}</td>
                   <td>{getStatusBadge(order.status)}</td>
                   <td>{formatDate(order.createdAt)}</td>
@@ -332,6 +362,7 @@ const OrdersPage = () => {
         vouchers={vouchers}
         addOrder={addOrder}
         updateOrder={updateOrder}
+        onSaved={handleSavedOrder}
       />
     </div>
   );

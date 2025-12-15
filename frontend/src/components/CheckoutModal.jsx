@@ -19,6 +19,7 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
     const [voucherError, setVoucherError] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showVoucherForm, setShowVoucherForm] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState('cod');
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -95,6 +96,7 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
                     price: item.price
                 })),
                 voucherCode: appliedVoucher ? appliedVoucher.code : null,
+                paymentMethod: paymentMethod || 'cod',
                 shippingFee: 0, // You can add shipping fee calculation if needed
                 subtotal,
                 discount,
@@ -275,9 +277,36 @@ const CheckoutModal = ({ isOpen, onClose, onSuccess }) => {
                                     <span>Tổng cộng:</span>
                                     <span>{formatPrice(total)}</span>
                                 </div>
-                                <div className={styles.paymentMethod}>
-                                    <i className="fas fa-money-bill-wave"></i>
-                                    <span>Thanh toán khi nhận hàng (COD)</span>
+                                <div style={{ marginTop: 12 }}>
+                                    <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>Phương thức thanh toán</label>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentMethod('cod')}
+                                            style={{ padding: '8px 12px', borderRadius: 8, border: paymentMethod === 'cod' ? '2px solid #10b981' : '1px solid #e5e7eb', background: paymentMethod === 'cod' ? '#ecfdf5' : 'white', cursor: 'pointer' }}
+                                        >
+                                            COD (Thanh toán khi nhận)
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPaymentMethod('bank_transfer')}
+                                            style={{ padding: '8px 12px', borderRadius: 8, border: paymentMethod === 'bank_transfer' ? '2px solid #10b981' : '1px solid #e5e7eb', background: paymentMethod === 'bank_transfer' ? '#ecfdf5' : 'white', cursor: 'pointer' }}
+                                        >
+                                            Chuyển khoản (QR)
+                                        </button>
+                                    </div>
+
+                                    <div style={{ maxHeight: paymentMethod === 'bank_transfer' ? 220 : 0, overflow: 'hidden', transition: 'max-height 0.4s ease', marginTop: 12 }}>
+                                        <div style={{ padding: paymentMethod === 'bank_transfer' ? 12 : '0 12px', background: '#fff', borderRadius: 8, border: '1px dashed #e5e7eb', display: 'flex', gap: 12, alignItems: 'center' }}>
+                                            <img src="../../payment_qr.jpg" alt="Bank QR" style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8, background: '#f3f4f6' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                                            <div style={{ fontSize: 14, color: '#374151' }}>
+                                                <div><strong>Ngân hàng:</strong> MB Bank</div>
+                                                <div><strong>Chủ TK:</strong> TRAN QUOC ANH</div>
+                                                <div><strong>STK:</strong> 1129082004</div>
+                                                <div style={{ marginTop: 8, color: '#6b7280' }}>Vui lòng ghi nội dung: Tên - SĐT để shop đối soát.</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

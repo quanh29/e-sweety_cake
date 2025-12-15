@@ -102,3 +102,44 @@
   margin-top: 20px;
   justify-content: flex-end;
 }
+
+/* Details Container */
+.detailsContainer {
+  padding: 10px 0;
+}
+
+.detailRow {
+  display: flex;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+}
+
+.detailLabel {
+  font-weight: 600;
+  color: #374151;
+  min-width: 140px;
+  font-size: 14px;
+}
+
+.detailValue {
+  color: #6b7280;
+  flex: 1;
+  font-size: 14px;
+}
+
+.dataDiffSection {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 2px solid #e5e7eb;
+}
+
+.dataDiffSection h3 {
+  color: #1f2937;
+  font-size: 16px;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
