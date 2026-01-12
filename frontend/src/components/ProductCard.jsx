@@ -1,16 +1,23 @@
+import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { formatPrice } from '../data';
 import styles from './ProductCard.module.css';
 
 const ProductCard = ({ product }) => {
+    const navigate = useNavigate();
     const { addToCart } = useCart();
 
-    const handleAddToCart = () => {
+    const handleAddToCart = (e) => {
+        e.stopPropagation();
         addToCart(product);
     };
 
+    const handleCardClick = () => {
+        navigate(`/product/${product.id}`);
+    };
+
     return (
-        <div className={styles.productCard}>
+        <div className={styles.productCard} onClick={handleCardClick}>
             <div className={styles.productImageContainer}>
                 <img src={product.image} alt={product.name} className={styles.productImage} />
             </div>
@@ -21,7 +28,7 @@ const ProductCard = ({ product }) => {
             </div>
             <div className={styles.productInfo}>
                 <h3 className={styles.productName}>{product.name}</h3>
-                <p className={styles.productDescription}>{product.description}</p>
+                <p className={styles.productDescription}></p>
                 <div className={styles.productPrice}>{formatPrice(product.price)}</div>
                 <div className={styles.productActions}>
                     <button className={styles.btn} onClick={handleAddToCart}>

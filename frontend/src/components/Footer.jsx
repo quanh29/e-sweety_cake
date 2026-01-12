@@ -44,6 +44,7 @@ const Footer = () => {
                             <li><a href="/#products">Sản phẩm</a></li>
                             <li><Link to="/about">Giới thiệu</Link></li>
                             <li><Link to="/contact">Liên hệ</Link></li>
+                            <li><Link to="/policy">Chính sách</Link></li>
                         </ul>
                     </div>
 
@@ -53,7 +54,7 @@ const Footer = () => {
                         <ul className={styles.contactList}>
                             <li>
                                 <MapPin size={18} />
-                                <span>Số 1 Đại Cồ Việt, quận Hai Bà Trưng, Hà Nội</span>
+                                <span>Số 10 Đại Cồ Việt, quận Hai Bà Trưng, Hà Nội</span>
                             </li>
                             <li>
                                 <Phone size={18} />
@@ -61,7 +62,11 @@ const Footer = () => {
                             </li>
                             <li>
                                 <Mail size={18} />
-                                <span><a href="mailto:contact@e-sweetiebake.com">contact@e-sweetiebake.com</a></span>
+                                <span><a href="mailto:contact@e-sweetiebake.online">contact@e-sweetiebake.online</a></span>
+                            </li>
+                            <li>
+                                <Mail size={18} />
+                                <span><a href="mailto:esweetiebake@gmail.com">esweetiebake@gmail.com</a></span>
                             </li>
                         </ul>
                     </div>

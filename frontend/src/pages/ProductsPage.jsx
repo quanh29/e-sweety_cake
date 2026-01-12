@@ -154,7 +154,12 @@ const ProductsPage = () => {
           </div>
           <div className={modalStyles.formGroup}>
             <label>Mô tả</label>
-            <textarea name="description" defaultValue={editingProduct?.description} />
+            <textarea 
+              name="description" 
+              defaultValue={editingProduct?.description} 
+              rows={5}
+              style={{ resize: 'vertical' }}
+            />
           </div>
           <div className={modalStyles.formGroup}>
             <label>Hình ảnh sản phẩm</label>

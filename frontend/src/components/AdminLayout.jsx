@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useAdmin } from '../context/AdminContext';
 import Modal from './Modal';
 import Button from './Button';
-import { Package, Cake, Download, Tag, Users, Settings, LogOut, User, History, Mail } from 'lucide-react';
+import { Package, Cake, Download, Tag, Users, Settings, LogOut, User, History, Mail, MessageCircle } from 'lucide-react';
 import styles from './AdminLayout.module.css';
 import modalStyles from './Modal.module.css';
 
@@ -197,6 +197,15 @@ const AdminLayout = () => {
           >
             <Mail className={styles.menuIcon} size={20} />
             <span>Tin nhắn liên hệ</span>
+          </NavLink>
+          <NavLink
+            to="/admin/manage/chat-history"
+            className={({ isActive }) =>
+              `${styles.menuItem} ${isActive ? styles.active : ''}`
+            }
+          >
+            <MessageCircle className={styles.menuIcon} size={20} />
+            <span>Lịch sử chat</span>
           </NavLink>
           <NavLink
             to="/admin/manage/audit-logs"

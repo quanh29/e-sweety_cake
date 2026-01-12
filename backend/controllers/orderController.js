@@ -27,16 +27,16 @@ export const createPublicOrder = async (req, res) => {
                 return res.status(404).json({ message: `Product ${item.productId} not found` });
             }
             
-            if (product.stock < item.quantity) {
-                await session.abortTransaction();
-                return res.status(400).json({ 
-                    message: `Insufficient stock for ${product.name}. Available: ${product.stock}` 
-                });
-            }
+            // if (product.stock < item.quantity) {
+            //     await session.abortTransaction();
+            //     return res.status(400).json({ 
+            //         message: `Insufficient stock for ${product.name}. Available: ${product.stock}` 
+            //     });
+            // }
 
             // Reduce product stock
-            product.stock -= item.quantity;
-            await product.save({ session });
+            // product.stock -= item.quantity;
+            // await product.save({ session });
 
             orderItems.push({
                 productId: product._id,
@@ -162,7 +162,7 @@ export const createOrder = async (req, res) => {
 
         const createdBy = req.user.id;
 
-        // Validate and prepare items
+        // Validate and prepare items (don't deduct stock yet - wait for confirmation)
         const orderItems = [];
         for (const item of items) {
             const product = await Product.findById(item.productId).session(session);
@@ -171,16 +171,13 @@ export const createOrder = async (req, res) => {
                 return res.status(404).json({ message: `Product ${item.productId} not found` });
             }
             
-            if (product.stock < item.quantity) {
-                await session.abortTransaction();
-                return res.status(400).json({ 
-                    message: `Insufficient stock for ${product.name}. Available: ${product.stock}` 
-                });
-            }
-
-            // Reduce stock
-            product.stock -= item.quantity;
-            await product.save({ session });
+            // Check stock availability but don't deduct yet
+            // if (product.stock < item.quantity) {
+            //     await session.abortTransaction();
+            //     return res.status(400).json({ 
+            //         message: `Insufficient stock for ${product.name}. Available: ${product.stock}` 
+            //     });
+            // }
 
             orderItems.push({
                 productId: product._id,
@@ -276,8 +273,8 @@ export const updateOrder = async (req, res) => {
         // Store original data for audit log
         req.originalData = order.toObject();
 
-        // Only restore/update stock if order is not cancelled
-        if (order.status !== 'cancelled') {
+        // Only manage stock if order is confirmed (not pending or cancelled)
+        if (order.status === 'confirmed') {
             // Restore stock from old items
             for (const oldItem of order.items) {
                 const product = await Product.findById(oldItem.productId).session(session);
@@ -372,8 +369,25 @@ export const updateOrderStatus = async (req, res) => {
 
         const oldStatus = order.status;
 
-        // If cancelling order, restore stock
-        if (status === 'cancelled' && oldStatus !== 'cancelled') {
+        // If confirming order, deduct stock
+        if (status === 'confirmed' && oldStatus !== 'confirmed') {
+            for (const item of order.items) {
+                const product = await Product.findById(item.productId).session(session);
+                if (product) {
+                    if (product.stock < item.quantity) {
+                        await session.abortTransaction();
+                        return res.status(400).json({ 
+                            message: `Insufficient stock for ${product.name}. Available: ${product.stock}` 
+                        });
+                    }
+                    product.stock -= item.quantity;
+                    await product.save({ session });
+                }
+            }
+        }
+
+        // If cancelling order from confirmed status, restore stock
+        if (status === 'cancelled' && oldStatus === 'confirmed') {
             for (const item of order.items) {
                 const product = await Product.findById(item.productId).session(session);
                 if (product) {
@@ -412,8 +426,8 @@ export const deleteOrder = async (req, res) => {
             return res.status(404).json({ message: 'Order not found' });
         }
 
-        // If order is not cancelled, restore stock
-        if (order.status !== 'cancelled') {
+        // If order was confirmed, restore stock
+        if (order.status === 'confirmed') {
             for (const item of order.items) {
                 const product = await Product.findById(item.productId).session(session);
                 if (product) {

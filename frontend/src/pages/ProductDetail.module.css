@@ -1,0 +1,537 @@
+.productDetailPage {
+  min-height: 100vh;
+  background: #fef6f0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  margin-top: 80px;
+}
+
+/* Loading */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f5e6d3;
+  border-top: 4px solid #d4806a;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Breadcrumb */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.breadcrumbLink {
+  cursor: pointer;
+  color: #d4806a;
+  transition: color 0.3s ease;
+}
+
+.breadcrumbLink:hover {
+  color: #a0483e;
+  text-decoration: underline;
+}
+
+.breadcrumbSeparator {
+  color: #999;
+}
+
+.breadcrumbCurrent {
+  color: #333;
+  font-weight: 500;
+}
+
+/* Product Detail */
+.productDetail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  margin-bottom: 5rem;
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.08);
+}
+
+.productImageSection {
+  position: relative;
+  overflow: visible;
+}
+
+.productImageContainer {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  border-radius: 20px;
+  overflow: visible;
+  background: #f9f9f9;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.productImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+  border-radius: 20px;
+}
+
+.productImageContainer:hover .productImage {
+  opacity: 0.95;
+}
+
+/* Magnifier */
+.magnifier {
+  position: absolute;
+  left: calc(100% + 20px);
+  top: 0;
+  width: 350px;
+  height: 350px;
+  border-radius: 16px;
+  background-color: white;
+  background-repeat: no-repeat;
+  background-size: 200%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border: 3px solid #d4806a;
+  pointer-events: none;
+  z-index: 100;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Product Info */
+.productInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.productName {
+  font-size: 2.5rem;
+  color: #5d4037;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.productPrice {
+  font-size: 2rem;
+  color: #d4806a;
+  font-weight: 700;
+}
+
+.productActions {
+  display: flex;
+  gap: 1rem;
+}
+
+.addToCartBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem 2.5rem;
+  background: #d4806a;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(212, 128, 106, 0.3);
+}
+
+.addToCartBtn:hover {
+  background: #a0483e;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 128, 106, 0.4);
+}
+
+.productDetails {
+  padding: 1.5rem;
+  background: #f9f9f9;
+  border-radius: 12px;
+}
+
+.productDetails h3 {
+  font-size: 1.3rem;
+  color: #5d4037;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.detailsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detailItem {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 8px;
+}
+
+.detailLabel {
+  font-weight: 600;
+  color: #5d4037;
+  min-width: 120px;
+}
+
+.detailValue {
+  color: #666;
+}
+
+.productNotes {
+  padding: 1.5rem;
+  background: #fff8f0;
+  border-radius: 12px;
+  border: 2px dashed #d4806a;
+}
+
+.productNotes h4 {
+  font-size: 1.1rem;
+  color: #5d4037;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.productNotes ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.productNotes ul li {
+  padding: 0.5rem 0;
+  color: #666;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.productNotes ul li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: #d4806a;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+/* Product Description Section */
+.descriptionSection {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  margin-bottom: 4rem;
+  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.08);
+}
+
+.descriptionTitle {
+  font-size: 1.75rem;
+  color: #5d4037;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid #f5e6d3;
+}
+
+.descriptionContent {
+  color: #666;
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+
+.descriptionContent p {
+  margin-bottom: 1rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Related Products Carousel */
+.relatedSection {
+  margin-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+.relatedTitle {
+  font-size: 2rem;
+  color: #5d4037;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-weight: 700;
+}
+
+.carouselContainer {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.carouselBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  border: 2px solid #d4806a;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.3s ease;
+  color: #d4806a;
+}
+
+.carouselBtn:hover:not(:disabled) {
+  background: #d4806a;
+  color: white;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.carouselBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.prevBtn {
+  left: -25px;
+}
+
+.nextBtn {
+  right: -25px;
+}
+
+.carouselWrapper {
+  overflow: hidden;
+  padding: 1rem 0;
+}
+
+.carouselTrack {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+}
+
+.carouselItem {
+  min-width: calc(33.333% - 1.33rem);
+  max-width: calc(33.333% - 1.33rem);
+  margin: 0 0.67rem;
+  flex-shrink: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .productDetail {
+    gap: 3rem;
+    padding: 2rem;
+  }
+
+  .productName {
+    font-size: 2rem;
+  }
+
+  .magnifier {
+    display: none;
+  }
+
+  .carouselItem {
+    min-width: calc(50% - 1rem);
+    max-width: calc(50% - 1rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+    padding-right: 1rem;
+    margin-top: 70px;
+  }
+
+  .breadcrumb {
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .productDetail {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 1.5rem;
+  }
+
+  .productImageContainer {
+    height: 400px;
+  }
+
+  .magnifier {
+    display: none;
+  }
+
+  .productName {
+    font-size: 1.75rem;
+  }
+
+  .productPrice {
+    font-size: 1.75rem;
+  }
+
+  .addToCartBtn {
+    width: 100%;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+  }
+
+  .descriptionSection {
+    padding: 2rem 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .descriptionTitle {
+    font-size: 1.5rem;
+  }
+
+  .descriptionContent {
+    font-size: 1rem;
+  }
+
+  .productDetails,
+  .productNotes {
+    padding: 1.25rem;
+  }
+
+  .relatedTitle {
+    font-size: 1.75rem;
+  }
+
+  .carouselItem {
+    min-width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .carouselBtn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .prevBtn {
+    left: -15px;
+  }
+
+  .nextBtn {
+    right: -15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .productImageContainer {
+    height: 300px;
+  }
+
+  .productName {
+    font-size: 1.5rem;
+  }
+
+  .productPrice {
+    font-size: 1.5rem;
+  }
+
+  .addToCartBtn {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.95rem;
+  }
+
+  .descriptionSection {
+    padding: 1.5rem 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .descriptionTitle {
+    font-size: 1.3rem;
+  }
+
+  .descriptionContent {
+    font-size: 0.95rem;
+  }
+
+  .productDetails h3,
+  .productNotes h4 {
+    font-size: 1.1rem;
+  }
+
+  .productDescription p,
+  .detailValue,
+  .productNotes ul li {
+    font-size: 0.9rem;
+  }
+
+  .relatedTitle {
+    font-size: 1.5rem;
+  }
+
+  .carouselBtn {
+    width: 35px;
+    height: 35px;
+  }
+
+  .prevBtn {
+    left: -10px;
+  }
+
+  .nextBtn {
+    right: -10px;
+  }
+
+  .detailLabel {
+    min-width: 100px;
+    font-size: 0.9rem;
+  }
+
+  .zoomContent {
+    max-width: 95%;
+    max-height: 85%;
+  }
+
+  .closeBtn {
+    top: -45px;
+    width: 36px;
+    height: 36px;
+  }
+}

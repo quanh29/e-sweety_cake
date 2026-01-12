@@ -12,8 +12,12 @@ import userRoutes from './routes/userRoutes.js';
 import importRoutes from './routes/importRoutes.js';
 import auditLogRoutes from './routes/auditLogRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 
 const app = express();
+
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
@@ -50,6 +54,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/imports', importRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/contacts', contactRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Protected route examples
 app.get('/api/profile', authenticateJWT, (req, res) => {

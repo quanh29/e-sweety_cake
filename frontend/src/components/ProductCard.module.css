@@ -6,6 +6,7 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s, box-shadow 0.3s;
     position: relative;
+    cursor: pointer;
 }
 
 .productCard::before {
@@ -145,6 +146,13 @@
     color: #666;
     margin-bottom: 15px;
     font-size: 0.9rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
 }
 
 .productPrice {

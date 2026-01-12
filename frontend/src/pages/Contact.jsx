@@ -159,7 +159,7 @@ const Contact = () => {
                                     </div>
                                     <div className={styles.infoContent}>
                                         <h3>Địa chỉ</h3>
-                                        <p>Số 1 Đại Cồ Việt, quận Hai Bà Trưng<br /> Hà Nội, Việt Nam</p>
+                                        <p>Số 10 Đại Cồ Việt, quận Hai Bà Trưng<br /> Hà Nội, Việt Nam</p>
                                     </div>
                                 </div>
 
@@ -183,8 +183,8 @@ const Contact = () => {
                                     <div className={styles.infoContent}>
                                         <h3>Email</h3>
                                         <p>
-                                            <a href="mailto:info@sweetbakery.com">contact@sweetbakery.com</a><br />
-                                            <a href="mailto:support@sweetbakery.com">support@sweetbakery.com</a>
+                                            <a href="mailto:esweetiebake@gmail.com">esweetiebake@gmail.com</a><br />
+                                            <a href="mailto:contact@e-sweetiebake.online">contact@e-sweetiebake.online</a>
                                         </p>
                                     </div>
                                 </div>

@@ -317,3 +317,34 @@ export const auditLogAPI = {
     return response.data;
   }
 };
+
+// Chat API endpoints
+export const chatAPI = {
+  // Public - Send message to chatbot
+  sendMessage: async (customerName, message, conversationId = null) => {
+    const response = await publicAxios.post('/chat/send', {
+      customerName,
+      message,
+      conversationId
+    });
+    return response.data;
+  },
+
+  // Admin - Get all conversations
+  getConversations: async () => {
+    const response = await axiosInstance.get('/chat/conversations');
+    return response.data;
+  },
+
+  // Admin - Get messages of a conversation
+  getConversationMessages: async (conversationId) => {
+    const response = await axiosInstance.get(`/chat/conversations/${conversationId}`);
+    return response.data;
+  },
+
+  // Admin - Delete a conversation
+  deleteConversation: async (conversationId) => {
+    const response = await axiosInstance.delete(`/chat/conversations/${conversationId}`);
+    return response.data;
+  }
+};
